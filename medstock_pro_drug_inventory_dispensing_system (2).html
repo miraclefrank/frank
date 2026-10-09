@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedStock - Drug Inventory & Dispensing System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar / Mobile Header -->
+    <aside id="sidebar" class="w-full md:w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col justify-between z-20 transition-all duration-300">
+        <div>
+            <!-- Logo & Brand Header -->
+            <div class="h-16 flex items-center justify-between px-6 bg-slate-950/50 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-xl bg-teal-500 flex items-center justify-center text-white shadow-lg shadow-teal-500/30">
+                        <i class="fa-solid fa-pills text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-base leading-tight">MedStock</h1>
+                        <p class="text-[11px] text-teal-400 font-medium">Rx Dispense & Inventory</p>
+                    </div>
+                </div>
+                <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav id="navMenu" class="p-4 space-y-1.5 hidden md:block">
+                <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-white bg-teal-600/90 shadow-md shadow-teal-600/20">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" onclick="switchTab('inventory')" id="nav-inventory" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-200">
+                    <i class="fa-solid fa-boxes-stacked w-5 text-center text-base"></i>
+                    <span>Drug Inventory</span>
+                    <span id="badgeTotalDrugs" class="ml-auto bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full border border-slate-700">0</span>
+                </a>
+                <a href="#" onclick="switchTab('dispense')" id="nav-dispense" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-200">
+                    <i class="fa-solid fa-hand-holding-medical w-5 text-center text-base"></i>
+                    <span>Dispense Drug</span>
+                </a>
+                <a href="#" onclick="switchTab('logs')" id="nav-logs" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-200">
+                    <i class="fa-solid fa-clock-rotate-left w-5 text-center text-base"></i>
+                    <span>Activity Log</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Quick System Status Badge -->
+        <div class="p-4 m-4 rounded-xl bg-slate-800/60 border border-slate-800 text-xs text-slate-400 hidden md:block">
+            <div class="flex items-center justify-between mb-1">
+                <span class="font-medium text-slate-300">System Status</span>
+                <span class="inline-flex items-center gap-1 text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Active
+                </span>
+            </div>
+            <p class="text-[11px] text-slate-500">Database synchronized. Auto-alerts active.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+        
+        <!-- Top App Bar -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-10 shadow-sm">
+            <div class="flex items-center gap-3">
+                <h2 id="pageTitle" class="text-lg font-bold text-slate-800">Dashboard Overview</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Export / Print Button -->
+                <button onclick="exportInventoryReport()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200">
+                    <i class="fa-solid fa-file-export text-slate-500"></i>
+                    <span class="hidden sm:inline">Export CSV</span>
+                </button>
+                <button onclick="triggerNewDrugModal()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm shadow-teal-600/30">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add New Drug</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Body -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" id="mainContent">
+            
+            <!-- TAB 1: DASHBOARD OVERVIEW -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                <!-- KPI Stat Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <!-- Total Items -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-capsules"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Items</p>
+                            <h3 id="kpiTotalDrugs" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            <p class="text-[11px] text-slate-400">Unique registered items</p>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Alerts -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Low Stock</p>
+                            <h3 id="kpiLowStock" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            <p class="text-[11px] text-amber-600 font-medium">Below reorder point</p>
+                        </div>
+                    </div>
+
+                    <!-- Expiring Soon -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Expiring Soon</p>
+                            <h3 id="kpiExpiringSoon" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            <p class="text-[11px] text-orange-600 font-medium">Within 60 Days</p>
+                        </div>
+                    </div>
+
+                    <!-- Expired -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-skull-crossbones"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Expired</p>
+                            <h3 id="kpiExpired" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            <p class="text-[11px] text-rose-600 font-medium">Quarantine / Disposal</p>
+                        </div>
+                    </div>
+
+                    <!-- Total Dispensed Today -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-prescription-bottle-medical"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Dispensed Today</p>
+                            <h3 id="kpiDispensedToday" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            <p class="text-[11px] text-teal-600 font-medium">Units issued</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Category Breakdown Chart -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">Inventory Distribution by Category</h3>
+                            <span class="text-xs text-slate-400">Live inventory levels</span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Expiry & Stock Status Chart -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">Stock Health Ratio</h3>
+                            <span class="text-xs text-slate-400">Risk Assessment</span>
+                        </div>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="healthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Critical Alerts & Quick Actions List -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Urgent Expiry Warnings -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                                <h3 class="font-bold text-slate-800 text-sm">Urgent Expiry & Stock Warnings</h3>
+                            </div>
+                            <button onclick="switchTab('inventory')" class="text-xs text-teal-600 font-medium hover:underline">View All</button>
+                        </div>
+                        <div id="urgentAlertsList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            <!-- Dynamic Content populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Summary -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-history text-teal-600"></i>
+                                <h3 class="font-bold text-slate-800 text-sm">Recent Dispensing Activity</h3>
+                            </div>
+                            <button onclick="switchTab('logs')" class="text-xs text-teal-600 font-medium hover:underline">View Log</button>
+                        </div>
+                        <div id="dashboardRecentLogs" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                            <!-- Dynamic Content populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: DRUG INVENTORY MANAGEMENT -->
+            <div id="tab-inventory" class="tab-content hidden space-y-4">
+                <!-- Filters and Controls Bar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="filterInventory()" placeholder="Search by name, category, batch, or shelf..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <!-- Category & Status Filters -->
+                    <div class="flex flex-wrap gap-2">
+                        <select id="categoryFilter" onchange="filterInventory()" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20">
+                            <option value="ALL">All Categories</option>
+                            <option value="Antibiotics">Antibiotics</option>
+                            <option value="Analgesics">Analgesics</option>
+                            <option value="Antihypertensives">Antihypertensives</option>
+                            <option value="Antidiabetics">Antidiabetics</option>
+                            <option value="Diagnostic Reagents">Diagnostic Reagents</option>
+                            <option value="Supplements">Supplements</option>
+                            <option value="Intravenous Solutions">Intravenous Solutions</option>
+                            <option value="Antimalarials">Antimalarials</option>
+                            <option value="Antivirals">Antivirals</option>
+                            <option value="Antiallergics / Antihistamines">Antiallergics / Antihistamines</option>
+                            <option value="Gastrointestinal">Gastrointestinal</option>
+                            <option value="Cardiovascular">Cardiovascular</option>
+                            <option value="Respiratory">Respiratory</option>
+                            <option value="Topicals & Dermatologicals">Topicals & Dermatologicals</option>
+                            <option value="Ophthalmics">Ophthalmics</option>
+                            <option value="General Pharmaceuticals">General Pharmaceuticals</option>
+                        </select>
+
+                        <select id="statusFilter" onchange="filterInventory()" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20">
+                            <option value="ALL">All Statuses</option>
+                            <option value="LOW_STOCK">Low Stock</option>
+                            <option value="OUT_OF_STOCK">Out of Stock</option>
+                            <option value="EXPIRING_SOON">Expiring Soon (60 Days)</option>
+                            <option value="EXPIRED">Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Inventory Table Card -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                                    <th class="py-3.5 px-4">Drug Info</th>
+                                    <th class="py-3.5 px-4">Category</th>
+                                    <th class="py-3.5 px-4">Batch / Location</th>
+                                    <th class="py-3.5 px-4 text-center">In Stock</th>
+                                    <th class="py-3.5 px-4">Expiry Date</th>
+                                    <th class="py-3.5 px-4">Unit Price</th>
+                                    <th class="py-3.5 px-4 text-center">Status Badges</th>
+                                    <th class="py-3.5 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="emptyInventoryMsg" class="hidden p-8 text-center text-slate-400">
+                        <i class="fa-solid fa-box-open text-4xl mb-2 text-slate-300"></i>
+                        <p class="text-base font-medium text-slate-600">No drugs found matching criteria</p>
+                        <p class="text-xs text-slate-400">Try adjusting your filters or search query.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: DISPENSING MODULE -->
+            <div id="tab-dispense" class="tab-content hidden space-y-6">
+                <div class="max-w-4xl mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Dispense Pharmaceutical Item</h3>
+                            <p class="text-xs text-slate-500">Record a new drug issuance and automatically deduct stock.</p>
+                        </div>
+                        <span class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-full">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> Safety Validated
+                        </span>
+                    </div>
+
+                    <form id="dispenseForm" onsubmit="handleDispenseSubmit(event)" class="p-6 space-y-6">
+                        <!-- Step 1: Drug Selection -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Select Item to Dispense <span class="text-rose-500">*</span></label>
+                            <select id="dispenseDrugSelect" onchange="onDispenseDrugChange()" required class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white">
+                                <option value="">-- Choose Item from Inventory --</option>
+                            </select>
+                        </div>
+
+                        <!-- Drug Selected Info Preview Box -->
+                        <div id="selectedDrugCard" class="hidden p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h4 id="previewDrugName" class="font-bold text-slate-800 text-base">---</h4>
+                                    <p id="previewDrugMeta" class="text-xs text-slate-500">Batch: - | Shelf: -</p>
+                                </div>
+                                <div id="previewBadges" class="flex flex-wrap gap-1">
+                                    <!-- Badges injected here -->
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-xs">
+                                <div>
+                                    <span class="text-slate-400 block">Available Qty:</span>
+                                    <span id="previewQty" class="font-bold text-slate-700 text-sm">0</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">Expiry Date:</span>
+                                    <span id="previewExpiry" class="font-bold text-slate-700 text-sm">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">Unit Price:</span>
+                                    <span id="previewPrice" class="font-bold text-teal-700 text-sm">₦0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Warning / Error Banner (Expired or Out of Stock) -->
+                        <div id="dispenseWarningBanner" class="hidden p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-3">
+                            <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <h5 id="dispenseWarningTitle" class="font-bold text-sm">Dispense Warning</h5>
+                                <p id="dispenseWarningText" class="mt-0.5">This item cannot be dispensed.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Dispense Details Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Quantity to Dispense <span class="text-rose-500">*</span></label>
+                                <input type="number" id="dispenseQuantity" min="1" required oninput="calculateDispenseTotal()" placeholder="e.g. 2" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Recipient / Patient Name or ID <span class="text-rose-500">*</span></label>
+                                <input type="text" id="dispenseRecipient" required placeholder="e.g. John Doe (ID #4920)" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Prescription / Ref Code</label>
+                                <input type="text" id="dispenseRef" placeholder="e.g. RX-2026-8812" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Total Calculated Cost</label>
+                                <input type="text" id="dispenseTotalCost" readonly value="₦0.00" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-slate-100 font-semibold text-teal-700 cursor-not-allowed">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Dosage Instructions / Notes</label>
+                            <textarea id="dispenseNotes" rows="2" placeholder="e.g. Take 1 tablet every 8 hours after meals for 7 days..." class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"></textarea>
+                        </div>
+
+                        <!-- Action Submit Button -->
+                        <div class="pt-3 border-t border-slate-100 flex justify-end">
+                            <button type="submit" id="btnDispenseSubmit" class="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-md shadow-teal-600/30 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i> Confirm & Dispense Item
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 4: DISPENSING & TRANSACTION AUDIT LOG -->
+            <div id="tab-logs" class="tab-content hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">System Audit Trail</h3>
+                        <p class="text-xs text-slate-500">Immutable record of all drug movements & dispensing transactions</p>
+                    </div>
+                    <button onclick="clearAuditLog()" class="text-xs text-rose-600 hover:text-rose-700 font-medium px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition-colors">
+                        Clear Log History
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                                    <th class="py-3 px-4">Date & Time</th>
+                                    <th class="py-3 px-4">Action Type</th>
+                                    <th class="py-3 px-4">Drug Name</th>
+                                    <th class="py-3 px-4 text-center">Qty</th>
+                                    <th class="py-3 px-4 text-center">Stock Left</th>
+                                    <th class="py-3 px-4">Recipient / Ref</th>
+                                    <th class="py-3 px-4">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- Dynamically filled -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="emptyLogMsg" class="hidden p-8 text-center text-slate-400">
+                        <i class="fa-solid fa-list-check text-4xl mb-2 text-slate-300"></i>
+                        <p class="text-base font-medium text-slate-600">No activity logged yet</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ADD / EDIT DRUG MODAL -->
+    <div id="drugModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-pills text-teal-400"></i>
+                    <h3 id="modalTitle" class="font-bold text-base">Add New Drug Item</h3>
+                </div>
+                <button onclick="closeDrugModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <form id="drugForm" onsubmit="handleDrugFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="drugId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Drug / Item Name <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formDrugName" required placeholder="e.g. Amoxicillin 500mg Capsule" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category <span class="text-rose-500">*</span></label>
+                        <select id="formCategory" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            <option value="Antibiotics">Antibiotics</option>
+                            <option value="Analgesics">Analgesics</option>
+                            <option value="Antihypertensives">Antihypertensives</option>
+                            <option value="Antidiabetics">Antidiabetics</option>
+                            <option value="Diagnostic Reagents">Diagnostic Reagents</option>
+                            <option value="Supplements">Supplements</option>
+                            <option value="Intravenous Solutions">Intravenous Solutions</option>
+                            <option value="Antimalarials">Antimalarials</option>
+                            <option value="Antivirals">Antivirals</option>
+                            <option value="Antiallergics / Antihistamines">Antiallergics / Antihistamines</option>
+                            <option value="Gastrointestinal">Gastrointestinal</option>
+                            <option value="Cardiovascular">Cardiovascular</option>
+                            <option value="Respiratory">Respiratory</option>
+                            <option value="Topicals & Dermatologicals">Topicals & Dermatologicals</option>
+                            <option value="Ophthalmics">Ophthalmics</option>
+                            <option value="General Pharmaceuticals">General Pharmaceuticals</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Batch / Lot Number <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formBatch" required placeholder="e.g. LOT-2025-09A" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Initial Quantity in Stock <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formQty" min="0" required placeholder="100" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Low Stock Threshold <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formThreshold" min="1" required placeholder="20" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Expiry Date <span class="text-rose-500">*</span></label>
+                        <input type="date" id="formExpiry" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Price (₦) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formPrice" step="0.01" min="0" required placeholder="12.50" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Shelf / Storage Location</label>
+                        <input type="text" id="formLocation" placeholder="e.g. Shelf B-04 / Cabinet 2" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeDrugModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm shadow-teal-600/30 transition-colors">
+                        Save Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Helper to compute relative dates for realistic stock dynamic testing
+        const getRelativeDate = (daysOffset) => {
+            const d = new Date();
+            d.setDate(d.getDate() + daysOffset);
+            return d.toISOString().split('T')[0];
+        };
+
+        // --- FULL PHARMACEUTICAL INVENTORY LIST (101 ITEMS) ---
+        let drugsData = [
+            { id: "DRUG-001", name: "ACTal (Amatem Softgel)", category: "Antimalarials", batch: "LOT-1001", quantity: 1, threshold: 10, expiry: getRelativeDate(120), price: 4200.00, location: "Shelf A-01" },
+            { id: "DRUG-002", name: "Amatem Forte", category: "Antimalarials", batch: "LOT-1002", quantity: 6, threshold: 10, expiry: getRelativeDate(200), price: 4200.00, location: "Shelf A-01" },
+            { id: "DRUG-003", name: "Artequick", category: "Antimalarials", batch: "LOT-1003", quantity: 2, threshold: 10, expiry: getRelativeDate(150), price: 3200.00, location: "Shelf A-01" },
+            { id: "DRUG-004", name: "Camosunate (Adult)", category: "Antimalarials", batch: "LOT-1004", quantity: 1, threshold: 5, expiry: getRelativeDate(180), price: 2300.00, location: "Shelf A-01" },
+            { id: "DRUG-005", name: "Coartem 80/480mg", category: "Antimalarials", batch: "LOT-1005", quantity: 2, threshold: 10, expiry: getRelativeDate(90), price: 4800.00, location: "Shelf A-01" },
+            { id: "DRUG-006", name: "Luter (Adult)", category: "Antimalarials", batch: "LOT-1006", quantity: 2, threshold: 10, expiry: getRelativeDate(210), price: 3000.00, location: "Shelf A-01" },
+            { id: "DRUG-007", name: "Luter (Junior)", category: "Antimalarials", batch: "LOT-1007", quantity: 2, threshold: 5, expiry: getRelativeDate(140), price: 2200.00, location: "Shelf A-01" },
+            { id: "DRUG-008", name: "Lonart Suspension", category: "Antimalarials", batch: "LOT-1008", quantity: 1, threshold: 5, expiry: getRelativeDate(110), price: 3500.00, location: "Shelf A-01" },
+            { id: "DRUG-009", name: "Luter Suspension", category: "Antimalarials", batch: "LOT-1009", quantity: 2, threshold: 5, expiry: getRelativeDate(130), price: 3200.00, location: "Shelf A-01" },
+            { id: "DRUG-010", name: "Amatem Suspension", category: "Antimalarials", batch: "LOT-1010", quantity: 1, threshold: 5, expiry: getRelativeDate(160), price: 3800.00, location: "Shelf A-01" },
+            { id: "DRUG-011", name: "Maloff Forte", category: "Antimalarials", batch: "LOT-1011", quantity: 1, threshold: 5, expiry: getRelativeDate(175), price: 2800.00, location: "Shelf A-01" },
+            { id: "DRUG-012", name: "Pyramax (Adult)", category: "Antimalarials", batch: "LOT-1012", quantity: 2, threshold: 5, expiry: getRelativeDate(250), price: 4500.00, location: "Shelf A-01" },
+
+            { id: "DRUG-013", name: "Amoxyclav 625mg Tab (Ranbaxy)", category: "Antibiotics", batch: "LOT-1013", quantity: 1, threshold: 10, expiry: getRelativeDate(180), price: 7500.00, location: "Shelf B-01" },
+            { id: "DRUG-014", name: "Augmentin 625mg Tab", category: "Antibiotics", batch: "LOT-1014", quantity: 1, threshold: 10, expiry: getRelativeDate(220), price: 14500.00, location: "Shelf B-01" },
+            { id: "DRUG-015", name: "Augmentin 1g Tab", category: "Antibiotics", batch: "LOT-1015", quantity: 1, threshold: 10, expiry: getRelativeDate(240), price: 18500.00, location: "Shelf B-01" },
+            { id: "DRUG-016", name: "Augmentin 228mg Suspension", category: "Antibiotics", batch: "LOT-1016", quantity: 1, threshold: 5, expiry: getRelativeDate(120), price: 7800.00, location: "Shelf B-01" },
+            { id: "DRUG-017", name: "Augmentin 457mg Suspension", category: "Antibiotics", batch: "LOT-1017", quantity: 1, threshold: 5, expiry: getRelativeDate(150), price: 9500.00, location: "Shelf B-01" },
+            { id: "DRUG-018", name: "Azithromycin 500mg Tab", category: "Antibiotics", batch: "LOT-1018", quantity: 4, threshold: 10, expiry: getRelativeDate(300), price: 3500.00, location: "Shelf B-01" },
+            { id: "DRUG-019", name: "Ciprofloxacin 500mg Tab", category: "Antibiotics", batch: "LOT-1019", quantity: 10, threshold: 15, expiry: getRelativeDate(320), price: 1500.00, location: "Shelf B-01" },
+            { id: "DRUG-020", name: "Cefuroxime (Zinnat 500mg)", category: "Antibiotics", batch: "LOT-1020", quantity: 2, threshold: 10, expiry: getRelativeDate(280), price: 16000.00, location: "Shelf B-01" },
+            { id: "DRUG-021", name: "Flagyl 200mg Tab (Metronidazole)", category: "Antibiotics", batch: "LOT-1021", quantity: 5, threshold: 20, expiry: getRelativeDate(360), price: 800.00, location: "Shelf B-01" },
+            { id: "DRUG-022", name: "Flagyl Suspension", category: "Antibiotics", batch: "LOT-1022", quantity: 2, threshold: 10, expiry: getRelativeDate(190), price: 1800.00, location: "Shelf B-01" },
+            { id: "DRUG-023", name: "Levofloxacin 500mg Tab", category: "Antibiotics", batch: "LOT-1023", quantity: 3, threshold: 10, expiry: getRelativeDate(210), price: 4200.00, location: "Shelf B-01" },
+            { id: "DRUG-024", name: "Septrin Tab (Co-trimoxazole)", category: "Antibiotics", batch: "LOT-1024", quantity: 4, threshold: 15, expiry: getRelativeDate(400), price: 1200.00, location: "Shelf B-01" },
+            { id: "DRUG-025", name: "Septrin Suspension", category: "Antibiotics", batch: "LOT-1025", quantity: 2, threshold: 5, expiry: getRelativeDate(180), price: 2200.00, location: "Shelf B-01" },
+            { id: "DRUG-026", name: "Ampiclox Capsules (Beecham)", category: "Antibiotics", batch: "LOT-1026", quantity: 6, threshold: 20, expiry: getRelativeDate(200), price: 3800.00, location: "Shelf B-01" },
+            { id: "DRUG-027", name: "Ampiclox Neonatal Drops", category: "Antibiotics", batch: "LOT-1027", quantity: 1, threshold: 5, expiry: getRelativeDate(90), price: 2500.00, location: "Shelf B-01" },
+            { id: "DRUG-028", name: "Ceftriaxone 1g Injection", category: "Antibiotics", batch: "LOT-1028", quantity: 5, threshold: 10, expiry: getRelativeDate(180), price: 3000.00, location: "Shelf B-02" },
+
+            { id: "DRUG-029", name: "Paracetamol 500mg Tab (Emzor)", category: "Analgesics", batch: "LOT-1029", quantity: 20, threshold: 30, expiry: getRelativeDate(500), price: 500.00, location: "Shelf C-01" },
+            { id: "DRUG-030", name: "Panadol Extra", category: "Analgesics", batch: "LOT-1030", quantity: 15, threshold: 20, expiry: getRelativeDate(450), price: 1200.00, location: "Shelf C-01" },
+            { id: "DRUG-031", name: "Ibuprofen 400mg Tab", category: "Analgesics", batch: "LOT-1031", quantity: 12, threshold: 20, expiry: getRelativeDate(300), price: 800.00, location: "Shelf C-01" },
+            { id: "DRUG-032", name: "Diclofenac 50mg Tab", category: "Analgesics", batch: "LOT-1032", quantity: 10, threshold: 15, expiry: getRelativeDate(320), price: 1000.00, location: "Shelf C-01" },
+            { id: "DRUG-033", name: "Diclofenac 100mg SR Tab", category: "Analgesics", batch: "LOT-1033", quantity: 8, threshold: 15, expiry: getRelativeDate(310), price: 1500.00, location: "Shelf C-01" },
+            { id: "DRUG-034", name: "Tramadol 50mg Cap", category: "Analgesics", batch: "LOT-1034", quantity: 0, threshold: 10, expiry: getRelativeDate(150), price: 2500.00, location: "Shelf C-01" },
+            { id: "DRUG-035", name: "Cataflam 50mg Tab", category: "Analgesics", batch: "LOT-1035", quantity: 3, threshold: 10, expiry: getRelativeDate(210), price: 4500.00, location: "Shelf C-01" },
+            { id: "DRUG-036", name: "Emzor Paracetamol Syrup", category: "Analgesics", batch: "LOT-1036", quantity: 5, threshold: 10, expiry: getRelativeDate(280), price: 1000.00, location: "Shelf C-01" },
+
+            { id: "DRUG-037", name: "Amlodipine 5mg Tab", category: "Antihypertensives", batch: "LOT-1037", quantity: 8, threshold: 15, expiry: getRelativeDate(360), price: 1200.00, location: "Shelf D-01" },
+            { id: "DRUG-038", name: "Amlodipine 10mg Tab", category: "Antihypertensives", batch: "LOT-1038", quantity: 6, threshold: 15, expiry: getRelativeDate(360), price: 1800.00, location: "Shelf D-01" },
+            { id: "DRUG-039", name: "Lisinopril 5mg Tab", category: "Antihypertensives", batch: "LOT-1039", quantity: 4, threshold: 10, expiry: getRelativeDate(250), price: 1500.00, location: "Shelf D-01" },
+            { id: "DRUG-040", name: "Lisinopril 10mg Tab", category: "Antihypertensives", batch: "LOT-1040", quantity: 5, threshold: 10, expiry: getRelativeDate(250), price: 2200.00, location: "Shelf D-01" },
+            { id: "DRUG-041", name: "Methyldopa 250mg (Aldomet)", category: "Antihypertensives", batch: "LOT-1041", quantity: 3, threshold: 10, expiry: getRelativeDate(180), price: 4500.00, location: "Shelf D-01" },
+            { id: "DRUG-042", name: "Vasoprin (Aspirin 75mg)", category: "Cardiovascular", batch: "LOT-1042", quantity: 10, threshold: 15, expiry: getRelativeDate(400), price: 1200.00, location: "Shelf D-01" },
+            { id: "DRUG-043", name: "Telmisartan 40mg Tab", category: "Antihypertensives", batch: "LOT-1043", quantity: 2, threshold: 10, expiry: getRelativeDate(300), price: 3800.00, location: "Shelf D-01" },
+
+            { id: "DRUG-044", name: "Metformin 500mg Tab", category: "Antidiabetics", batch: "LOT-1044", quantity: 12, threshold: 20, expiry: getRelativeDate(400), price: 1500.00, location: "Shelf D-02" },
+            { id: "DRUG-045", name: "Metformin 850mg Tab", category: "Antidiabetics", batch: "LOT-1045", quantity: 0, threshold: 15, expiry: getRelativeDate(-15), price: 2200.00, location: "Shelf D-02" },
+            { id: "DRUG-046", name: "Glibenclamide 5mg Tab", category: "Antidiabetics", batch: "LOT-1046", quantity: 5, threshold: 10, expiry: getRelativeDate(190), price: 1000.00, location: "Shelf D-02" },
+
+            { id: "DRUG-047", name: "Omeprazole 20mg Cap", category: "Gastrointestinal", batch: "LOT-1047", quantity: 15, threshold: 20, expiry: getRelativeDate(300), price: 1200.00, location: "Shelf E-01" },
+            { id: "DRUG-048", name: "Esomeprazole 40mg (Nexium)", category: "Gastrointestinal", batch: "LOT-1048", quantity: 2, threshold: 10, expiry: getRelativeDate(140), price: 8500.00, location: "Shelf E-01" },
+            { id: "DRUG-049", name: "Gaviscon Liquid Suspension", category: "Gastrointestinal", batch: "LOT-1049", quantity: 3, threshold: 5, expiry: getRelativeDate(200), price: 4500.00, location: "Shelf E-01" },
+            { id: "DRUG-050", name: "Gestid Antacid Tab", category: "Gastrointestinal", batch: "LOT-1050", quantity: 10, threshold: 15, expiry: getRelativeDate(350), price: 1500.00, location: "Shelf E-01" },
+            { id: "DRUG-051", name: "Loperamide 2mg Cap (Imodium)", category: "Gastrointestinal", batch: "LOT-1051", quantity: 4, threshold: 10, expiry: getRelativeDate(220), price: 1000.00, location: "Shelf E-01" },
+            { id: "DRUG-052", name: "ORS (Oral Rehydration Salt)", category: "Gastrointestinal", batch: "LOT-1052", quantity: 25, threshold: 20, expiry: getRelativeDate(600), price: 300.00, location: "Shelf E-01" },
+
+            { id: "DRUG-053", name: "Piriton Tab (Chlorpheniramine)", category: "Antiallergics / Antihistamines", batch: "LOT-1053", quantity: 15, threshold: 20, expiry: getRelativeDate(400), price: 500.00, location: "Shelf E-02" },
+            { id: "DRUG-054", name: "Loratadine 10mg Tab", category: "Antiallergics / Antihistamines", batch: "LOT-1054", quantity: 8, threshold: 15, expiry: getRelativeDate(320), price: 1200.00, location: "Shelf E-02" },
+            { id: "DRUG-055", name: "Cetirizine 10mg Tab", category: "Antiallergics / Antihistamines", batch: "LOT-1055", quantity: 10, threshold: 15, expiry: getRelativeDate(350), price: 1000.00, location: "Shelf E-02" },
+
+            { id: "DRUG-056", name: "Prospan Cough Syrup", category: "Respiratory", batch: "LOT-1056", quantity: 2, threshold: 5, expiry: getRelativeDate(180), price: 5500.00, location: "Shelf F-01" },
+            { id: "DRUG-057", name: "Benylin Expectorant Syrup", category: "Respiratory", batch: "LOT-1057", quantity: 4, threshold: 10, expiry: getRelativeDate(210), price: 3200.00, location: "Shelf F-01" },
+            { id: "DRUG-058", name: "Ascoril Expectorant", category: "Respiratory", batch: "LOT-1058", quantity: 3, threshold: 5, expiry: getRelativeDate(150), price: 2800.00, location: "Shelf F-01" },
+            { id: "DRUG-059", name: "Ventolin Inhaler 100mcg", category: "Respiratory", batch: "LOT-1059", quantity: 2, threshold: 5, expiry: getRelativeDate(280), price: 6500.00, location: "Shelf F-01" },
+
+            { id: "DRUG-060", name: "Vitamin C 500mg Chewable", category: "Supplements", batch: "LOT-1060", quantity: 20, threshold: 20, expiry: getRelativeDate(400), price: 800.00, location: "Shelf G-01" },
+            { id: "DRUG-061", name: "Immunace Extra Tab", category: "Supplements", batch: "LOT-1061", quantity: 3, threshold: 5, expiry: getRelativeDate(220), price: 9500.00, location: "Shelf G-01" },
+            { id: "DRUG-062", name: "Pregnacare Original Tab", category: "Supplements", batch: "LOT-1062", quantity: 4, threshold: 5, expiry: getRelativeDate(250), price: 8200.00, location: "Shelf G-01" },
+            { id: "DRUG-063", name: "Pregnacare Plus Dual Pack", category: "Supplements", batch: "LOT-1063", quantity: 2, threshold: 5, expiry: getRelativeDate(200), price: 14500.00, location: "Shelf G-01" },
+            { id: "DRUG-064", name: "Wellwoman Original Cap", category: "Supplements", batch: "LOT-1064", quantity: 3, threshold: 5, expiry: getRelativeDate(210), price: 8800.00, location: "Shelf G-01" },
+            { id: "DRUG-065", name: "Wellman Original Cap", category: "Supplements", batch: "LOT-1065", quantity: 3, threshold: 5, expiry: getRelativeDate(210), price: 8800.00, location: "Shelf G-01" },
+            { id: "DRUG-066", name: "Osteocare Calcium Tab", category: "Supplements", batch: "LOT-1066", quantity: 2, threshold: 5, expiry: getRelativeDate(190), price: 6500.00, location: "Shelf G-01" },
+            { id: "DRUG-067", name: "Astymin Liquid 110ml", category: "Supplements", batch: "LOT-1067", quantity: 4, threshold: 5, expiry: getRelativeDate(170), price: 3200.00, location: "Shelf G-01" },
+            { id: "DRUG-068", name: "Chemiron Blood Tonic", category: "Supplements", batch: "LOT-1068", quantity: 5, threshold: 10, expiry: getRelativeDate(300), price: 2500.00, location: "Shelf G-01" },
+            { id: "DRUG-069", name: "Chemiron Capsules", category: "Supplements", batch: "LOT-1069", quantity: 6, threshold: 10, expiry: getRelativeDate(310), price: 2200.00, location: "Shelf G-01" },
+            { id: "DRUG-070", name: "Feroglobin B12 Liquid", category: "Supplements", batch: "LOT-1070", quantity: 3, threshold: 5, expiry: getRelativeDate(160), price: 4800.00, location: "Shelf G-01" },
+
+            { id: "DRUG-071", name: "Normal Saline 0.9% IV (500ml)", category: "Intravenous Solutions", batch: "LOT-1071", quantity: 15, threshold: 10, expiry: getRelativeDate(500), price: 1200.00, location: "Bay 1 - Rack A" },
+            { id: "DRUG-072", name: "Dextrose Saline IV (500ml)", category: "Intravenous Solutions", batch: "LOT-1072", quantity: 10, threshold: 10, expiry: getRelativeDate(500), price: 1300.00, location: "Bay 1 - Rack A" },
+            { id: "DRUG-073", name: "Ringers Lactate IV (500ml)", category: "Intravenous Solutions", batch: "LOT-1073", quantity: 8, threshold: 5, expiry: getRelativeDate(480), price: 1500.00, location: "Bay 1 - Rack A" },
+
+            { id: "DRUG-074", name: "Funbact-A Cream", category: "Topicals & Dermatologicals", batch: "LOT-1074", quantity: 12, threshold: 10, expiry: getRelativeDate(220), price: 1200.00, location: "Shelf H-01" },
+            { id: "DRUG-075", name: "Visita Cream", category: "Topicals & Dermatologicals", batch: "LOT-1075", quantity: 8, threshold: 10, expiry: getRelativeDate(200), price: 1500.00, location: "Shelf H-01" },
+            { id: "DRUG-076", name: "Hydrocortisone Cream 1%", category: "Topicals & Dermatologicals", batch: "LOT-1076", quantity: 5, threshold: 5, expiry: getRelativeDate(180), price: 800.00, location: "Shelf H-01" },
+
+            { id: "DRUG-077", name: "Chloramphenicol Eye Drops", category: "Ophthalmics", batch: "LOT-1077", quantity: 6, threshold: 10, expiry: getRelativeDate(150), price: 800.00, location: "Shelf H-02" },
+            { id: "DRUG-078", name: "Visine Eye Drops", category: "Ophthalmics", batch: "LOT-1078", quantity: 4, threshold: 5, expiry: getRelativeDate(210), price: 2500.00, location: "Shelf H-02" },
+
+            { id: "DRUG-079", name: "COVID-19 Rapid Test Kit", category: "Diagnostic Reagents", batch: "LOT-1079", quantity: 15, threshold: 10, expiry: getRelativeDate(120), price: 3500.00, location: "Cold Ref 1" },
+            { id: "DRUG-080", name: "Malaria RDT Strips (Pack 25)", category: "Diagnostic Reagents", batch: "LOT-1080", quantity: 2, threshold: 5, expiry: getRelativeDate(300), price: 12500.00, location: "Cabinet D" },
+            { id: "DRUG-081", name: "H. Pylori Test Strips", category: "Diagnostic Reagents", batch: "LOT-1081", quantity: 5, threshold: 5, expiry: getRelativeDate(200), price: 1800.00, location: "Cabinet D" },
+            { id: "DRUG-082", name: "Pregnancy Strip (HCG)", category: "Diagnostic Reagents", batch: "LOT-1082", quantity: 50, threshold: 20, expiry: getRelativeDate(600), price: 300.00, location: "Cabinet D" },
+
+            { id: "DRUG-083", name: "Acyclovir 400mg Tab", category: "Antivirals", batch: "LOT-1083", quantity: 3, threshold: 5, expiry: getRelativeDate(180), price: 3500.00, location: "Shelf B-03" },
+            { id: "DRUG-084", name: "Acyclovir Cream", category: "Antivirals", batch: "LOT-1084", quantity: 4, threshold: 5, expiry: getRelativeDate(200), price: 1200.00, location: "Shelf B-03" },
+
+            { id: "DRUG-085", name: "Glucometer Test Strips (50s)", category: "Diagnostic Reagents", batch: "LOT-1085", quantity: 3, threshold: 5, expiry: getRelativeDate(240), price: 11500.00, location: "Cabinet D" },
+            { id: "DRUG-086", name: "Digital Thermometer", category: "General Pharmaceuticals", batch: "LOT-1086", quantity: 5, threshold: 5, expiry: getRelativeDate(1000), price: 2500.00, location: "Shelf J-01" },
+            { id: "DRUG-087", name: "Surgical Face Masks (Pack 50)", category: "General Pharmaceuticals", batch: "LOT-1087", quantity: 10, threshold: 5, expiry: getRelativeDate(1000), price: 3000.00, location: "Shelf J-01" },
+            { id: "DRUG-088", name: "Latex Gloves Medium (Box 100)", category: "General Pharmaceuticals", batch: "LOT-1088", quantity: 8, threshold: 5, expiry: getRelativeDate(800), price: 6500.00, location: "Shelf J-01" },
+            { id: "DRUG-089", name: "Methylated Spirit 500ml", category: "General Pharmaceuticals", batch: "LOT-1089", quantity: 12, threshold: 10, expiry: getRelativeDate(700), price: 1500.00, location: "Shelf J-02" },
+            { id: "DRUG-090", name: "Hydrogen Peroxide 200ml", category: "General Pharmaceuticals", batch: "LOT-1090", quantity: 6, threshold: 5, expiry: getRelativeDate(400), price: 1000.00, location: "Shelf J-02" },
+            { id: "DRUG-091", name: "Cotton Wool 300g", category: "General Pharmaceuticals", batch: "LOT-1091", quantity: 10, threshold: 5, expiry: getRelativeDate(900), price: 2200.00, location: "Shelf J-02" },
+            { id: "DRUG-092", name: "Crepe Bandage 4 Inch", category: "General Pharmaceuticals", batch: "LOT-1092", quantity: 15, threshold: 10, expiry: getRelativeDate(1000), price: 800.00, location: "Shelf J-02" },
+            { id: "DRUG-093", name: "Plaster Roll 3 Inch", category: "General Pharmaceuticals", batch: "LOT-1093", quantity: 8, threshold: 5, expiry: getRelativeDate(1000), price: 2500.00, location: "Shelf J-02" },
+            { id: "DRUG-094", name: "Syringes & Needles 5ml (Pack 100)", category: "General Pharmaceuticals", batch: "LOT-1094", quantity: 4, threshold: 5, expiry: getRelativeDate(800), price: 7500.00, location: "Shelf J-03" },
+            { id: "DRUG-095", name: "IV Cannula 20G (Pink)", category: "General Pharmaceuticals", batch: "LOT-1095", quantity: 25, threshold: 15, expiry: getRelativeDate(600), price: 400.00, location: "Shelf J-03" },
+            { id: "DRUG-096", name: "IV Giving Set", category: "General Pharmaceuticals", batch: "LOT-1096", quantity: 30, threshold: 15, expiry: getRelativeDate(600), price: 500.00, location: "Shelf J-03" },
+            { id: "DRUG-097", name: "Albendazole 400mg Tab", category: "General Pharmaceuticals", batch: "LOT-1097", quantity: 12, threshold: 10, expiry: getRelativeDate(300), price: 600.00, location: "Shelf E-03" },
+            { id: "DRUG-098", name: "Zentel Suspension (Albendazole)", category: "General Pharmaceuticals", batch: "LOT-1098", quantity: 4, threshold: 5, expiry: getRelativeDate(250), price: 1800.00, location: "Shelf E-03" },
+            { id: "DRUG-099", name: "Combantrin Suspension", category: "General Pharmaceuticals", batch: "LOT-1099", quantity: 3, threshold: 5, expiry: getRelativeDate(200), price: 2200.00, location: "Shelf E-03" },
+            { id: "DRUG-100", name: "Coldflam Tab", category: "Respiratory", batch: "LOT-1100", quantity: 10, threshold: 10, expiry: getRelativeDate(280), price: 1000.00, location: "Shelf F-02" },
+            { id: "DRUG-101", name: "Procold Tab", category: "Respiratory", batch: "LOT-1101", quantity: 15, threshold: 10, expiry: getRelativeDate(290), price: 800.00, location: "Shelf F-02" }
+        ];
+
+        let auditLogs = [
+            {
+                timestamp: new Date().toLocaleString(),
+                action: "Dispensed",
+                drugName: "Coartem 80/480mg",
+                qty: 2,
+                stockRemaining: 2,
+                recipient: "Patient ID #1042",
+                notes: "Prescription RX-9011"
+            },
+            {
+                timestamp: new Date(Date.now() - 3600000).toLocaleString(),
+                action: "Added Stock",
+                drugName: "Normal Saline 0.9% IV (500ml)",
+                qty: 10,
+                stockRemaining: 15,
+                recipient: "Main Warehouse Supplier",
+                notes: "Restock Delivery"
+            }
+        ];
+
+        // --- GLOBAL CHART INSTANCES ---
+        let categoryChartInstance = null;
+        let healthChartInstance = null;
+
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-teal-600/90', 'text-white', 'shadow-md', 'shadow-teal-600/20');
+                el.classList.add('text-slate-400');
+            });
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-400');
+                activeNav.classList.add('bg-teal-600/90', 'text-white', 'shadow-md', 'shadow-teal-600/20');
+            }
+
+            // Update Page Header Title
+            const titles = {
+                dashboard: "Dashboard Overview",
+                inventory: "Drug Inventory Management",
+                dispense: "Drug Dispensing Station",
+                logs: "Audit Trail & Dispense History"
+            };
+            document.getElementById('pageTitle').innerText = titles[tabId] || "Dashboard";
+
+            if (tabId === 'dashboard') {
+                renderCharts();
+            } else if (tabId === 'dispense') {
+                populateDispenseDropdown();
+            }
+        }
+
+        // Mobile Menu Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            const nav = document.getElementById('navMenu');
+            nav.classList.toggle('hidden');
+        });
+
+        // Helper: Calculate Days Remaining until expiry
+        function getDaysUntilExpiry(expiryDateStr) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const exp = new Date(expiryDateStr);
+            exp.setHours(0,0,0,0);
+            const diffTime = exp - today;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // Helper: Get Expiry Status Object
+        function getExpiryStatus(expiryDateStr) {
+            const days = getDaysUntilExpiry(expiryDateStr);
+            if (days < 0) {
+                return { label: "EXPIRED", days, color: "bg-rose-100 text-rose-800 border-rose-300", isExpired: true };
+            } else if (days <= 30) {
+                return { label: `Expiring in ${days}d`, days, color: "bg-amber-100 text-amber-800 border-amber-300", isCritical: true };
+            } else if (days <= 60) {
+                return { label: `Expiring in ${days}d`, days, color: "bg-orange-100 text-orange-800 border-orange-300", isWarning: true };
+            } else {
+                return { label: "Good", days, color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+            }
+        }
+
+        // Helper: Get Stock Status Object
+        function getStockStatus(qty, threshold) {
+            if (qty <= 0) {
+                return { label: "Out of Stock", color: "bg-rose-100 text-rose-800 border-rose-300" };
+            } else if (qty <= threshold) {
+                return { label: "Low Stock", color: "bg-amber-100 text-amber-800 border-amber-300" };
+            } else {
+                return { label: "In Stock", color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+            }
+        }
+
+        function refreshDashboardStats() {
+            let total = drugsData.length;
+            let lowStockCount = 0;
+            let expiringSoonCount = 0;
+            let expiredCount = 0;
+
+            drugsData.forEach(d => {
+                if (d.quantity <= d.threshold) lowStockCount++;
+                const days = getDaysUntilExpiry(d.expiry);
+                if (days < 0) expiredCount++;
+                else if (days <= 60) expiringSoonCount++;
+            });
+
+            // Calculate today's total dispensed units
+            const todayStr = new Date().toLocaleDateString();
+            let dispensedTodayCount = auditLogs
+                .filter(log => log.action === "Dispensed" && new Date(log.timestamp).toLocaleDateString() === todayStr)
+                .reduce((acc, curr) => acc + curr.qty, 0);
+
+            document.getElementById('kpiTotalDrugs').innerText = total;
+            document.getElementById('kpiLowStock').innerText = lowStockCount;
+            document.getElementById('kpiExpiringSoon').innerText = expiringSoonCount;
+            document.getElementById('kpiExpired').innerText = expiredCount;
+            document.getElementById('kpiDispensedToday').innerText = dispensedTodayCount;
+
+            document.getElementById('badgeTotalDrugs').innerText = total;
+
+            // Render Urgent Warnings Box
+            renderUrgentAlertsList();
+            // Render Recent Activity Logs on Dashboard
+            renderDashboardRecentLogs();
+        }
+
+        function renderUrgentAlertsList() {
+            const container = document.getElementById('urgentAlertsList');
+            container.innerHTML = "";
+
+            const alerts = drugsData.filter(d => {
+                const exp = getExpiryStatus(d.expiry);
+                return d.quantity <= d.threshold || exp.isExpired || exp.isCritical || exp.isWarning;
+            });
+
+            if (alerts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 text-xs">
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-2xl mb-1 block"></i>
+                        No critical stock or expiry warnings at this time.
+                    </div>`;
+                return;
+            }
+
+            alerts.forEach(item => {
+                const expStatus = getExpiryStatus(item.expiry);
+                const stockStatus = getStockStatus(item.quantity, item.threshold);
+
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs hover:bg-slate-100 transition-colors";
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-800">${item.name}</p>
+                        <p class="text-[11px] text-slate-500">Qty: <span class="font-bold text-slate-700">${item.quantity}</span> | Shelf: ${item.location}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${stockStatus.color}">${stockStatus.label}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${expStatus.color}">${expStatus.label}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderDashboardRecentLogs() {
+            const container = document.getElementById('dashboardRecentLogs');
+            container.innerHTML = "";
+
+            if (auditLogs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No recent activity.</p>`;
+                return;
+            }
+
+            auditLogs.slice(0, 5).forEach(log => {
+                const div = document.createElement('div');
+                div.className = "p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <span class="font-semibold text-slate-800">${log.drugName}</span>
+                        <p class="text-[10px] text-slate-400">${log.timestamp} • ${log.recipient}</p>
+                    </div>
+                    <span class="px-2 py-0.5 font-bold rounded text-[10px] ${log.action === 'Dispensed' ? 'bg-teal-100 text-teal-800' : 'bg-blue-100 text-blue-800'}">
+                        -${log.qty} Units
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderCharts() {
+            // Category Distribution Chart
+            const categoryCounts = {};
+            drugsData.forEach(d => {
+                categoryCounts[d.category] = (categoryCounts[d.category] || 0) + d.quantity;
+            });
+
+            const catCtx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            categoryChartInstance = new Chart(catCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryCounts),
+                    datasets: [{
+                        label: 'Total Units Available',
+                        data: Object.values(categoryCounts),
+                        backgroundColor: '#14b8a6',
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Stock Health Doughnut Chart
+            let goodCount = 0;
+            let lowCount = 0;
+            let expiredCount = 0;
+
+            drugsData.forEach(d => {
+                const days = getDaysUntilExpiry(d.expiry);
+                if (days < 0) expiredCount++;
+                else if (d.quantity <= d.threshold) lowCount++;
+                else goodCount++;
+            });
+
+            const healthCtx = document.getElementById('healthChart').getContext('2d');
+            if (healthChartInstance) healthChartInstance.destroy();
+
+            healthChartInstance = new Chart(healthCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Optimal Stock', 'Low Stock', 'Expired'],
+                    datasets: [{
+                        data: [goodCount, lowCount, expiredCount],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function renderInventoryTable(itemsToRender = drugsData) {
+            const tbody = document.getElementById('inventoryTableBody');
+            const emptyMsg = document.getElementById('emptyInventoryMsg');
+            tbody.innerHTML = "";
+
+            if (itemsToRender.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                return;
+            } else {
+                emptyMsg.classList.add('hidden');
+            }
+
+            itemsToRender.forEach(item => {
+                const expStatus = getExpiryStatus(item.expiry);
+                const stockStatus = getStockStatus(item.quantity, item.threshold);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-800">
+                        ${item.name}
+                        <div class="text-[10px] font-normal text-slate-400">ID: ${item.id}</div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600">${item.category}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${item.batch}</span>
+                        <div class="text-[10px] text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i>${item.location}</div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="font-bold text-sm ${item.quantity <= item.threshold ? 'text-amber-600' : 'text-slate-800'}">${item.quantity}</span>
+                        <div class="text-[10px] text-slate-400">Min: ${item.threshold}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-medium text-slate-700">${item.expiry}</span>
+                    </td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">
+                        ₦${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex flex-col gap-1 items-center">
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${stockStatus.color}">${stockStatus.label}</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${expStatus.color}">${expStatus.label}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button onclick="triggerDispenseForItem('${item.id}')" title="Quick Dispense" class="p-1.5 rounded-lg text-teal-600 hover:bg-teal-50 border border-transparent hover:border-teal-200 transition-colors">
+                                <i class="fa-solid fa-hand-holding-medical text-sm"></i>
+                            </button>
+                            <button onclick="triggerEditDrugModal('${item.id}')" title="Edit Item" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors">
+                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </button>
+                            <button onclick="deleteDrugItem('${item.id}')" title="Delete Item" class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterInventory() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = drugsData.filter(item => {
+                const matchesQuery = item.name.toLowerCase().includes(query) ||
+                                     item.batch.toLowerCase().includes(query) ||
+                                     item.location.toLowerCase().includes(query) ||
+                                     item.category.toLowerCase().includes(query);
+
+                const matchesCat = category === 'ALL' || item.category === category;
+
+                let matchesStatus = true;
+                const days = getDaysUntilExpiry(item.expiry);
+
+                if (status === 'LOW_STOCK') matchesStatus = item.quantity <= item.threshold && item.quantity > 0;
+                else if (status === 'OUT_OF_STOCK') matchesStatus = item.quantity === 0;
+                else if (status === 'EXPIRING_SOON') matchesStatus = days >= 0 && days <= 60;
+                else if (status === 'EXPIRED') matchesStatus = days < 0;
+
+                return matchesQuery && matchesCat && matchesStatus;
+            });
+
+            renderInventoryTable(filtered);
+        }
+
+        function triggerNewDrugModal() {
+            document.getElementById('modalTitle').innerText = "Add New Drug Item";
+            document.getElementById('drugForm').reset();
+            document.getElementById('drugId').value = "";
+            document.getElementById('drugModal').classList.remove('hidden');
+        }
+
+        function triggerEditDrugModal(id) {
+            const item = drugsData.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTitle').innerText = "Edit Drug Details";
+            document.getElementById('drugId').value = item.id;
+            document.getElementById('formDrugName').value = item.name;
+            document.getElementById('formCategory').value = item.category;
+            document.getElementById('formBatch').value = item.batch;
+            document.getElementById('formQty').value = item.quantity;
+            document.getElementById('formThreshold').value = item.threshold;
+            document.getElementById('formExpiry').value = item.expiry;
+            document.getElementById('formPrice').value = item.price;
+            document.getElementById('formLocation').value = item.location;
+
+            document.getElementById('drugModal').classList.remove('hidden');
+        }
+
+        function closeDrugModal() {
+            document.getElementById('drugModal').classList.add('hidden');
+        }
+
+        function handleDrugFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('drugId').value;
+            const drugName = document.getElementById('formDrugName').value.trim();
+            const category = document.getElementById('formCategory').value;
+            const batch = document.getElementById('formBatch').value.trim();
+            const qty = parseInt(document.getElementById('formQty').value);
+            const threshold = parseInt(document.getElementById('formThreshold').value);
+            const expiry = document.getElementById('formExpiry').value;
+            const price = parseFloat(document.getElementById('formPrice').value);
+            const location = document.getElementById('formLocation').value.trim() || 'Unassigned Shelf';
+
+            if (editId) {
+                // Update Existing
+                const item = drugsData.find(d => d.id === editId);
+                if (item) {
+                    item.name = drugName;
+                    item.category = category;
+                    item.batch = batch;
+                    item.quantity = qty;
+                    item.threshold = threshold;
+                    item.expiry = expiry;
+                    item.price = price;
+                    item.location = location;
+
+                    logActivity("Updated Item", drugName, 0, qty, "System Admin", "Updated drug details");
+                }
+            } else {
+                // Add New
+                const newId = `DRUG-${String(drugsData.length + 1).padStart(3, '0')}`;
+                drugsData.push({
+                    id: newId,
+                    name: drugName,
+                    category,
+                    batch,
+                    quantity: qty,
+                    threshold,
+                    expiry,
+                    price,
+                    location
+                });
+
+                logActivity("Added Item", drugName, qty, qty, "System Admin", "New item registered in inventory");
+            }
+
+            closeDrugModal();
+            refreshDashboardStats();
+            filterInventory();
+        }
+
+        function deleteDrugItem(id) {
+            const item = drugsData.find(d => d.id === id);
+            if (!item) return;
+
+            if (confirm(`Are you sure you want to delete "${item.name}" from inventory?`)) {
+                drugsData = drugsData.filter(d => d.id !== id);
+                logActivity("Deleted Item", item.name, 0, 0, "System Admin", "Item removed from inventory");
+                refreshDashboardStats();
+                filterInventory();
+            }
+        }
+
+        function populateDispenseDropdown() {
+            const select = document.getElementById('dispenseDrugSelect');
+            select.innerHTML = `<option value="">-- Choose Item from Inventory --</option>`;
+
+            drugsData.forEach(d => {
+                const days = getDaysUntilExpiry(d.expiry);
+                let flag = "";
+                if (days < 0) flag = " [EXPIRED]";
+                else if (d.quantity === 0) flag = " [OUT OF STOCK]";
+
+                const option = document.createElement('option');
+                option.value = d.id;
+                option.innerText = `${d.name} (Batch: ${d.batch} | Qty: ${d.quantity})${flag}`;
+                select.appendChild(option);
+            });
+        }
+
+        function triggerDispenseForItem(id) {
+            switchTab('dispense');
+            const select = document.getElementById('dispenseDrugSelect');
+            select.value = id;
+            onDispenseDrugChange();
+        }
+
+        function onDispenseDrugChange() {
+            const id = document.getElementById('dispenseDrugSelect').value;
+            const previewCard = document.getElementById('selectedDrugCard');
+            const warningBanner = document.getElementById('dispenseWarningBanner');
+            const warningTitle = document.getElementById('dispenseWarningTitle');
+            const warningText = document.getElementById('dispenseWarningText');
+            const btnSubmit = document.getElementById('btnDispenseSubmit');
+
+            if (!id) {
+                previewCard.classList.add('hidden');
+                warningBanner.classList.add('hidden');
+                return;
+            }
+
+            const drug = drugsData.find(d => d.id === id);
+            if (!drug) return;
+
+            // Populate Preview Card
+            document.getElementById('previewDrugName').innerText = drug.name;
+            document.getElementById('previewDrugMeta').innerText = `Batch: ${drug.batch} | Location: ${drug.location}`;
+            document.getElementById('previewQty').innerText = drug.quantity;
+            document.getElementById('previewExpiry').innerText = drug.expiry;
+            document.getElementById('previewPrice').innerText = `₦${drug.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            const expStatus = getExpiryStatus(drug.expiry);
+            const stockStatus = getStockStatus(drug.quantity, drug.threshold);
+
+            document.getElementById('previewBadges').innerHTML = `
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${stockStatus.color}">${stockStatus.label}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${expStatus.color}">${expStatus.label}</span>
+            `;
+
+            previewCard.classList.remove('hidden');
+
+            // Safety Validation Warnings
+            btnSubmit.disabled = false;
+            btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            if (expStatus.isExpired) {
+                warningTitle.innerText = "SAFETY ALERT: Item Expired!";
+                warningText.innerText = "This drug has passed its expiration date. Dispensing expired medical products is restricted.";
+                warningBanner.classList.remove('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (drug.quantity <= 0) {
+                warningTitle.innerText = "OUT OF STOCK";
+                warningText.innerText = "There are 0 units remaining for this item. Cannot dispense.";
+                warningBanner.classList.remove('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                warningBanner.classList.add('hidden');
+            }
+
+            calculateDispenseTotal();
+        }
+
+        function calculateDispenseTotal() {
+            const id = document.getElementById('dispenseDrugSelect').value;
+            const qtyInput = parseInt(document.getElementById('dispenseQuantity').value) || 0;
+            const totalCostField = document.getElementById('dispenseTotalCost');
+
+            if (!id) return;
+            const drug = drugsData.find(d => d.id === id);
+            if (drug) {
+                const total = drug.price * qtyInput;
+                totalCostField.value = `₦${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+        }
+
+        function handleDispenseSubmit(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('dispenseDrugSelect').value;
+            const qty = parseInt(document.getElementById('dispenseQuantity').value);
+            const recipient = document.getElementById('dispenseRecipient').value.trim();
+            const refCode = document.getElementById('dispenseRef').value.trim();
+            const notes = document.getElementById('dispenseNotes').value.trim();
+
+            const drug = drugsData.find(d => d.id === id);
+
+            if (!drug) {
+                alert("Please select a valid drug item.");
+                return;
+            }
+
+            // Excess Quantity Check
+            if (qty > drug.quantity) {
+                alert(`Cannot dispense ${qty} units. Only ${drug.quantity} units remaining in stock.`);
+                return;
+            }
+
+            // Expiry Check Safety
+            const expStatus = getExpiryStatus(drug.expiry);
+            if (expStatus.isExpired) {
+                alert("Dispensing blocked: Drug is EXPIRED.");
+                return;
+            }
+
+            // Deduct Stock
+            drug.quantity -= qty;
+
+            // Log Transaction
+            logActivity("Dispensed", drug.name, qty, drug.quantity, recipient, `Ref: ${refCode || 'N/A'} | ${notes}`);
+
+            // Reset Form & Update Views
+            document.getElementById('dispenseForm').reset();
+            document.getElementById('selectedDrugCard').classList.add('hidden');
+            
+            refreshDashboardStats();
+            filterInventory();
+
+            alert(`Successfully dispensed ${qty} units of ${drug.name}!`);
+            switchTab('logs');
+        }
+
+        function logActivity(action, drugName, qty, stockRemaining, recipient, notes) {
+            auditLogs.unshift({
+                timestamp: new Date().toLocaleString(),
+                action,
+                drugName,
+                qty,
+                stockRemaining,
+                recipient: recipient || 'General',
+                notes: notes || '-'
+            });
+            renderAuditLogTable();
+        }
+
+        function renderAuditLogTable() {
+            const tbody = document.getElementById('auditLogTableBody');
+            const emptyMsg = document.getElementById('emptyLogMsg');
+            tbody.innerHTML = "";
+
+            if (auditLogs.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                return;
+            } else {
+                emptyMsg.classList.add('hidden');
+            }
+
+            auditLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono text-slate-500">${log.timestamp}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 font-bold rounded text-[10px] ${log.action === 'Dispensed' ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-800'}">
+                            ${log.action}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${log.drugName}</td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-700">${log.qty > 0 ? log.qty : '-'}</td>
+                    <td class="py-3 px-4 text-center font-bold text-teal-600">${log.stockRemaining}</td>
+                    <td class="py-3 px-4 text-slate-600">${log.recipient}</td>
+                    <td class="py-3 px-4 text-slate-400 italic max-w-xs truncate">${log.notes}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearAuditLog() {
+            if (confirm("Are you sure you want to clear the audit history log?")) {
+                auditLogs = [];
+                renderAuditLogTable();
+                refreshDashboardStats();
+            }
+        }
+
+        // Export Inventory Report to CSV
+        function exportInventoryReport() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Drug ID,Name,Category,Batch,Quantity,Threshold,Expiry Date,Price (NGN),Location,Status\n";
+
+            drugsData.forEach(d => {
+                const exp = getExpiryStatus(d.expiry);
+                const stock = getStockStatus(d.quantity, d.threshold);
+                const row = `"${d.id}","${d.name}","${d.category}","${d.batch}",${d.quantity},${d.threshold},"${d.expiry}",${d.price},"${d.location}","${stock.label} / ${exp.label}"`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `medstock_inventory_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = function() {
+            refreshDashboardStats();
+            renderInventoryTable();
+            renderAuditLogTable();
+            renderCharts();
+        };
+    </script>
+</body>
+</html>
