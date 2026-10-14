@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+Bridges4life$<!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
@@ -61,12 +61,12 @@
                         <p class="text-teal-100 text-sm mt-1">Bridges Diagnostics Center</p>
                     </div>
                     <p class="text-teal-100/80 text-xs leading-relaxed">
-                        Secure pharmacy inventory management, real-time drug tracking, unit pricing, and automated dispensing workflow.
+                        Secure pharmacy inventory management, real-time drug tracking, and automated dispensing workflow.
                     </p>
                 </div>
                 <div class="pt-6 border-t border-teal-600/50 text-[11px] text-teal-200 relative z-10 flex items-center justify-between">
                     <span><i class="fa-solid fa-shield-halved mr-1"></i> Authorized Personnel Only</span>
-                    <span>v2.5</span>
+                    <span>v2.4</span>
                 </div>
             </div>
 
@@ -92,7 +92,7 @@
                     </div>
 
                     <div id="loginError" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold text-center">
-                        Invalid email or password. (Note: Use master code Bridges4life$ or staff credentials)
+                        Invalid email or password.
                     </div>
 
                     <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-teal-600/30 transition-colors flex items-center justify-center gap-2">
@@ -122,7 +122,7 @@
                 </button>
             </div>
 
-            <!-- Active User Card (No password exposure) -->
+            <!-- Active User Card -->
             <div class="p-4 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60 flex items-center justify-between">
                 <div class="overflow-hidden">
                     <p id="activeUserName" class="text-xs font-bold text-white truncate">Super Admin</p>
@@ -167,6 +167,9 @@
                 <button onclick="switchTab('logs')" class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 bg-slate-800/50 hover:bg-teal-600 hover:text-white rounded-lg transition-colors flex items-center gap-2">
                     <i class="fa-solid fa-history text-teal-400"></i> View Activity History
                 </button>
+                <button onclick="downloadActivityPDF()" class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 bg-slate-800/50 hover:bg-teal-600 hover:text-white rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-rose-400"></i> Download PDF Log
+                </button>
             </div>
         </div>
 
@@ -178,7 +181,7 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Active
                 </span>
             </div>
-            <p class="text-[11px] text-slate-500">Secure Cloud Sync Active.</p>
+            <p class="text-[11px] text-slate-500">Cloud Sync & Security Active.</p>
         </div>
     </aside>
 
@@ -286,6 +289,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Alerts & Activity Log Cards -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                                <h3 class="font-bold text-slate-800 text-sm">Urgent Expiry & Stock Warnings</h3>
+                            </div>
+                            <button onclick="switchTab('inventory')" class="text-xs text-teal-600 font-medium hover:underline">View All</button>
+                        </div>
+                        <div id="urgentAlertsList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-history text-teal-600"></i>
+                                <h3 class="font-bold text-slate-800 text-sm">Recent Dispensing Activity</h3>
+                            </div>
+                            <button onclick="switchTab('logs')" class="text-xs text-teal-600 font-medium hover:underline">View Log</button>
+                        </div>
+                        <div id="dashboardRecentLogs" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- TAB 2: DRUG INVENTORY MANAGEMENT -->
@@ -306,6 +334,15 @@
                             <option value="Consumables & Supplies">Consumables & Supplies</option>
                             <option value="General Pharmaceuticals">General Pharmaceuticals</option>
                         </select>
+
+                        <select id="statusFilter" onchange="filterInventory()" class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20">
+                            <option value="ALL">All Statuses</option>
+                            <option value="LOW_STOCK">Low Stock (&le; 5)</option>
+                            <option value="OUT_OF_STOCK">Out of Stock</option>
+                            <option value="EXPIRING_SOON">Expiring Soon (60 Days)</option>
+                            <option value="EXPIRED">Expired</option>
+                            <option value="NO_EXPIRY">Pending Expiry Entry</option>
+                        </select>
                     </div>
                 </div>
 
@@ -319,14 +356,17 @@
                                     <th class="py-3.5 px-4">Batch / Location</th>
                                     <th class="py-3.5 px-4 text-center">In Stock</th>
                                     <th class="py-3.5 px-4">Expiry Date</th>
-                                    <th class="py-3.5 px-4">Cost Price (₦)</th>
-                                    <th class="py-3.5 px-4 text-teal-700 font-bold">Selling Price (₦)</th>
+                                    <th class="py-3.5 px-4">Unit Price (₦)</th>
                                     <th class="py-3.5 px-4 text-center">Status</th>
                                     <th class="py-3.5 px-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="inventoryTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
                         </table>
+                    </div>
+                    <div id="emptyInventoryMsg" class="hidden p-8 text-center text-slate-400">
+                        <i class="fa-solid fa-box-open text-4xl mb-2 text-slate-300"></i>
+                        <p class="text-base font-medium text-slate-600">No drugs found matching criteria</p>
                     </div>
                 </div>
             </div>
@@ -337,7 +377,7 @@
                     <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div>
                             <h3 class="font-bold text-slate-800 text-base">Dispense Pharmaceutical Item</h3>
-                            <p class="text-xs text-slate-500">Record drug issuance and automatically deduct stock at the configured selling price.</p>
+                            <p class="text-xs text-slate-500">Record drug issuance and automatically deduct stock.</p>
                         </div>
                         <span class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-full">
                             <i class="fa-solid fa-shield-halved mr-1"></i> Validated
@@ -358,6 +398,7 @@
                                     <h4 id="previewDrugName" class="font-bold text-slate-800 text-base">---</h4>
                                     <p id="previewDrugMeta" class="text-xs text-slate-500">Batch: - | Shelf: -</p>
                                 </div>
+                                <div id="previewBadges" class="flex flex-wrap gap-1"></div>
                             </div>
                             <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-xs">
                                 <div>
@@ -369,21 +410,34 @@
                                     <span id="previewExpiry" class="font-bold text-slate-700 text-sm">-</span>
                                 </div>
                                 <div>
-                                    <span class="text-slate-400 block">Unit Selling Price:</span>
+                                    <span class="text-slate-400 block">Unit Price:</span>
                                     <span id="previewPrice" class="font-bold text-teal-700 text-sm">₦0.00</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div id="dispenseWarningBanner" class="hidden p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-3">
+                            <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <h5 id="dispenseWarningTitle" class="font-bold text-sm">Dispense Warning</h5>
+                                <p id="dispenseWarningText" class="mt-0.5">This item cannot be dispensed.</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Quantity to Dispense <span class="text-rose-500">*</span></label>
-                                <input type="number" id="dispenseQuantity" min="1" required oninput="calculateDispenseTotal()" placeholder="e.g. 1" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20">
+                                <input type="number" id="dispenseQuantity" min="1" required oninput="calculateDispenseTotal()" placeholder="e.g. 1" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Recipient / Patient Name <span class="text-rose-500">*</span></label>
-                                <input type="text" id="dispenseRecipient" required placeholder="Patient Name / Ref" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20">
+                                <input type="text" id="dispenseRecipient" required placeholder="Patient Name / Ref" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Prescription Code</label>
+                                <input type="text" id="dispenseRef" placeholder="e.g. RX-9012" class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
                             </div>
 
                             <div>
@@ -392,108 +446,1238 @@
                             </div>
                         </div>
 
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Dosage Instructions / Notes</label>
+                            <textarea id="dispenseNotes" rows="2" placeholder="Instructions..." class="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"></textarea>
+                        </div>
+
                         <div class="pt-3 border-t border-slate-100 flex justify-end">
-                            <button type="submit" id="btnDispenseSubmit" class="w-full sm:w-auto px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-lg shadow-md transition-colors">
-                                <i class="fa-solid fa-check mr-1.5"></i> Complete Dispensing
+                            <button type="submit" id="btnDispenseSubmit" class="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-md shadow-teal-600/30 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i> Confirm Dispense
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
+            <!-- TAB 4: AUDIT LOGS & ACTIVITY HISTORY -->
+            <div id="tab-logs" class="tab-content hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">System Activity History & Audit Trail</h3>
+                        <p class="text-xs text-slate-500">Filter and search activities by date and staff user</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="downloadActivityPDF()" class="text-xs text-white bg-rose-600 hover:bg-rose-700 font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF Log
+                        </button>
+                        <button onclick="clearAuditLog()" class="nav-admin-only text-xs text-rose-600 hover:text-rose-700 font-medium px-3 py-2 rounded-lg border border-rose-200 hover:bg-rose-50 transition-colors">
+                            Clear Log
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date Range & Text Filter Bar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Search Keywords</label>
+                        <input type="text" id="logSearchInput" oninput="filterAuditLogs()" placeholder="Staff, drug, or patient..." class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Start Date</label>
+                        <input type="date" id="logStartDate" onchange="filterAuditLogs()" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">End Date</label>
+                        <input type="date" id="logEndDate" onchange="filterAuditLogs()" class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                                    <th class="py-3 px-4">Date & Time</th>
+                                    <th class="py-3 px-4">Performed By</th>
+                                    <th class="py-3 px-4">Action</th>
+                                    <th class="py-3 px-4">Drug Item</th>
+                                    <th class="py-3 px-4 text-center">Qty</th>
+                                    <th class="py-3 px-4 text-center">Stock Left</th>
+                                    <th class="py-3 px-4">Recipient</th>
+                                    <th class="py-3 px-4">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="emptyLogMsg" class="hidden p-8 text-center text-slate-400">
+                        <i class="fa-solid fa-list-check text-4xl mb-2 text-slate-300"></i>
+                        <p class="text-base font-medium text-slate-600">No activity logged matching date filters</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: STAFF & PERMISSIONS (SUPER ADMIN ONLY) -->
+            <div id="tab-staff" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Staff Account Management</h3>
+                        <p class="text-xs text-slate-500">Create staff logins, view or reset passwords, and assign functional system permissions</p>
+                    </div>
+                    <button onclick="triggerNewStaffModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-lg shadow-sm">
+                        <i class="fa-solid fa-user-plus mr-1.5"></i> Add Staff Account
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase">
+                                <th class="py-3 px-4">Staff Name & Gmail</th>
+                                <th class="py-3 px-4">Password</th>
+                                <th class="py-3 px-4">Role</th>
+                                <th class="py-3 px-4">Allowed Permissions</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
+    <!-- ADD / EDIT DRUG MODAL -->
+    <div id="drugModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-pills text-teal-400"></i>
+                    <h3 id="modalTitle" class="font-bold text-base">Edit Drug Details</h3>
+                </div>
+                <button onclick="closeDrugModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="drugForm" onsubmit="handleDrugFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="drugId">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Drug Description / Name <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formDrugName" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category <span class="text-rose-500">*</span></label>
+                        <select id="formCategory" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                            <option value="Injections">Injections</option>
+                            <option value="Tablets & Capsules">Tablets & Capsules</option>
+                            <option value="Oral Liquids & Suspensions">Oral Liquids & Suspensions</option>
+                            <option value="Topicals & Creams">Topicals & Creams</option>
+                            <option value="Consumables & Supplies">Consumables & Supplies</option>
+                            <option value="General Pharmaceuticals">General Pharmaceuticals</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Batch Number <span class="text-rose-500">*</span></label>
+                        <input type="text" id="formBatch" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Quantity Remaining <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formQty" min="0" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Low Stock Threshold <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formThreshold" min="1" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Expiry Date</label>
+                        <input type="date" id="formExpiry" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Sell Price (₦) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Shelf Location</label>
+                        <input type="text" id="formLocation" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeDrugModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE STAFF MODAL -->
+    <div id="staffModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-user-plus text-teal-400 mr-2"></i>Create Staff Account</h3>
+                <button onclick="closeStaffModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="handleStaffCreate(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="staffName" required placeholder="e.g. Nurse Sarah" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Gmail / Email Address</label>
+                    <input type="email" id="staffEmail" required placeholder="sarah@gmail.com" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="staffPass" required placeholder="••••••••" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-700 uppercase">Granted Permissions</label>
+                    <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="permDispense" checked class="rounded text-teal-600">
+                            <span>Dispense Drugs</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="permManageInventory" checked class="rounded text-teal-600">
+                            <span>Add / Edit Inventory Drugs</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="permViewLogs" checked class="rounded text-teal-600">
+                            <span>View Activity History</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="permExportPDF" checked class="rounded text-teal-600">
+                            <span>Download PDF Reports</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeStaffModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-teal-600 rounded-lg shadow-sm">Save Staff Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL FOR SUPER ADMIN -->
+    <div id="resetPassModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base"><i class="fa-solid fa-key text-teal-400 mr-2"></i>Reset Staff Password</h3>
+                <button onclick="closeResetPassModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="handleResetPasswordSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="resetPassStaffId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Staff Name</label>
+                    <input type="text" id="resetPassStaffName" readonly class="w-full px-3 py-2 text-sm border border-slate-200 bg-slate-100 text-slate-600 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">New Password</label>
+                    <input type="text" id="resetNewPass" required placeholder="Enter new password" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeResetPassModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Master authorization code integrated
-        const MASTER_CODE = "Bridges4life$";
-        
-        let inventoryData = [
-            { id: 1, name: "Paracetamol 500mg", category: "Tablets & Capsules", batch: "BT-9921", qty: 250, expiry: "2027-05-12", costPrice: 500, sellingPrice: 800 },
-            { id: 2, name: "Amoxicillin 500mg", category: "Tablets & Capsules", batch: "BT-8832", qty: 120, expiry: "2026-11-20", costPrice: 1200, sellingPrice: 1800 }
+        // Automatic Category Resolver based on item title keywords
+        function getCategoryFromName(name) {
+            const upper = name.toUpperCase();
+            if (upper.includes("INJECTION") || upper.includes("INJ") || upper.includes("AMPS") || upper.includes("IV")) return "Injections";
+            if (upper.includes("TAB") || upper.includes("CAP") || upper.includes("LOZENGES") || upper.includes("SACHET")) return "Tablets & Capsules";
+            if (upper.includes("SYRUP") || upper.includes("SUSPENSION") || upper.includes("DROPS") || upper.includes("SOLUTION") || upper.includes("LINCTUS")) return "Oral Liquids & Suspensions";
+            if (upper.includes("CREAM") || upper.includes("OINTMENT")) return "Topicals & Creams";
+            if (upper.includes("GLOVES") || upper.includes("MASK") || upper.includes("NEEDLE") || upper.includes("SET") || upper.includes("COTTONWOOL") || upper.includes("SPIRIT") || upper.includes("NYLON")) return "Consumables & Supplies";
+            return "General Pharmaceuticals";
+        }
+
+        // Full dataset containing all 101 pharmaceutical items from invoice pages
+        const rawDrugsData = [
+            { id: "OME", name: "OMEPRAZOLE INJECTION 40MG", quantity: 20, price: 650.00, expiry: "" },
+            { id: "pilat8766565", name: "PENTAZOCINE INJECTION", quantity: 4, price: 6900.00, expiry: "" },
+            { id: "PD45752", name: "KAKA PARACETAMOL INJECTION", quantity: 11, price: 700.00, expiry: "" },
+            { id: "PD00326", name: "CIPROTAB TAB X 14", quantity: 5, price: 4510.00, expiry: "" },
+            { id: "PD45690", name: "FIDSON GENTAMYCIN INJECTION", quantity: 5, price: 830.00, expiry: "" },
+            { id: "GGH", name: "FIDSON CEFUROXIME 250MG", quantity: 4, price: 4290.00, expiry: "" },
+            { id: "PD00374", name: "LABET INJECTION", quantity: 2, price: 3080.00, expiry: "" },
+            { id: "PD00855", name: "TINIFLOX TAB X 20", quantity: 5, price: 2880.00, expiry: "" },
+            { id: "6920108100829", name: "ARTESUN INJECTION 120MG", quantity: 20, price: 3000.00, expiry: "" },
+            { id: "PD45096", name: "FIDSON CEFUROXIME 500 X 10 TAB", quantity: 4, price: 6930.00, expiry: "" },
+            { id: "6971161600030", name: "TINEXDA CAPSULES 500MG X10 TAB", quantity: 5, price: 1230.00, expiry: "" },
+            { id: "PD0054", name: "GETZLOX 500MG LEVOFLOXACIN X10", quantity: 5, price: 2420.00, expiry: "" },
+            { id: "6154000372590", name: "METOCLOPRAMIDE INJ. 2ML (FIDSON)", quantity: 2, price: 650.00, expiry: "" },
+            { id: "8901040105231", name: "AMOXIL 500MG CAP X 100 BEECHAMS", quantity: 1, price: 18560.00, expiry: "" },
+            { id: "SSA500", name: "SWIPHA AZITHROMYCIN 500MG", quantity: 10, price: 2200.00, expiry: "" },
+            { id: "GNP0001", name: "LEVER 60MG ARTESUNATE INJECTION", quantity: 20, price: 900.00, expiry: "" },
+            { id: "PD00353", name: "EBECEF CEFTRIAXONE INJECTION 1G", quantity: 24, price: 1100.00, expiry: "" },
+            { id: "PD45473", name: "AFABETA INJECTION 150MG/2ML", quantity: 10, price: 2000.00, expiry: "" },
+            { id: "PD00366", name: "EMAL 150MG/2ML INJECTION X 3 AMPS", quantity: 10, price: 4790.00, expiry: "" },
+            { id: "PD45121", name: "TRIAXIN -S INJECTION", quantity: 20, price: 1770.00, expiry: "" },
+            { id: "PD00827", name: "HYDROCORTISONE CREAM 15G 1% DGF", quantity: 5, price: 1030.00, expiry: "" },
+            { id: "4233TB", name: "VILGET-M 50/1000MG X14 GETZ", quantity: 2, price: 8000.00, expiry: "" },
+            { id: "FCM", name: "FACE MASK BLUE", quantity: 1, price: 2000.00, expiry: "" },
+            { id: "0000000000ny", name: "SEWARD DISPOSABLE GLOVES", quantity: 3, price: 360.00, expiry: "" },
+            { id: "UDIA115", name: "DIABETMIN METFORMIN 500MG X 100 TAB", quantity: 1, price: 5130.00, expiry: "" },
+            { id: "8906001822356", name: "PLADOX 75MG TAB", quantity: 4, price: 3210.00, expiry: "" },
+            { id: "UDOX06", name: "DOXYCAP 100MG CAPS X 100", quantity: 1, price: 8260.00, expiry: "" },
+            { id: "PD00065", name: "HYDREX TAB X 100", quantity: 2, price: 1400.00, expiry: "" },
+            { id: "PD45642", name: "LOZATAN-25", quantity: 1, price: 3450.00, expiry: "" },
+            { id: "PD45282", name: "AMLONG 10MG (AMLODIPINE)", quantity: 3, price: 1100.00, expiry: "" },
+            { id: "PROM", name: "PROMETHAZINE INJECTION X 10AMPS", quantity: 2, price: 650.00, expiry: "" },
+            { id: "PDSFY", name: "ANGIZAAR -50 LOSARTAN POTASSIUM", quantity: 2, price: 3640.00, expiry: "" },
+            { id: "6156000067667", name: "GLANIL 5MG TAB X 100", quantity: 1, price: 3700.00, expiry: "" },
+            { id: "PD00248", name: "NIFEDIN DEXCEL 20MG RETARD TAB X 20", quantity: 2, price: 3190.00, expiry: "" },
+            { id: "UDOP05", name: "DOPATAB METHYLDOPA 250MG X 100 HOVID", quantity: 1, price: 9670.00, expiry: "" },
+            { id: "PD00655", name: "LIDOCAIN INJECTION + ADRENALINE", quantity: 2, price: 1040.00, expiry: "" },
+            { id: "LEX", name: "FIDSON LEVOFLOXACIN IV", quantity: 10, price: 1000.00, expiry: "" },
+            { id: "PD45132", name: "NITROFURANTOIN TAB 100MG", quantity: 10, price: 650.00, expiry: "" },
+            { id: "INF5668", name: "INFUSION SET", quantity: 50, price: 170.00, expiry: "" },
+            { id: "2011011508407", name: "21G EXTRA NEEDLE X 100 (GREEN)", quantity: 1, price: 1650.00, expiry: "" },
+            { id: "PD00521", name: "FUNGUSOL CREAM 20G", quantity: 10, price: 940.00, expiry: "" },
+            { id: "6156000127507", name: "KETOFUNG CREAM 20G", quantity: 10, price: 1160.00, expiry: "" },
+            { id: "PD00908", name: "AGARY SCALP VEIN SET 21G", quantity: 1, price: 4900.00, expiry: "" },
+            { id: "3400970000999", name: "TOT'HEMA ORAL SOLUTION X 20 AMP", quantity: 1, price: 13800.00, expiry: "" },
+            { id: "8906001822271", name: "AVSTAT 20MG (ATORVASTATIN) FIDSON", quantity: 5, price: 3600.00, expiry: "" },
+            { id: "8906035499234", name: "OCEFIX SUSPENSION 100ML", quantity: 2, price: 3410.00, expiry: "" },
+            { id: "8906035499227", name: "OCEFIX SUSPENSION 60ML", quantity: 2, price: 2470.00, expiry: "" },
+            { id: "6156000081335", name: "NEUROGESIC OINTMENT 35G", quantity: 5, price: 1130.00, expiry: "" },
+            { id: "PD00597", name: "GESTID SUSPENSION 200ML", quantity: 4, price: 1960.00, expiry: "" },
+            { id: "6156000127637", name: "FLUCAMED SUSPENSION 35ML", quantity: 2, price: 1510.00, expiry: "" },
+            { id: "PD45621", name: "EBECLAV SUSPENSION 228.5MG 100ML", quantity: 5, price: 3550.00, expiry: "" },
+            { id: "6034000140514", name: "TUXIL-D ADULT COUGH SYRUP 100ML", quantity: 12, price: 790.00, expiry: "" },
+            { id: "GGY", name: "CLAVAMOX 625MG", quantity: 10, price: 4500.00, expiry: "" },
+            { id: "PD00552", name: "AMPICLOX SUSPENSION 100ML BEECHAMS", quantity: 2, price: 4441.00, expiry: "" },
+            { id: "PD00550", name: "AMOXIL SUSPENSION 100ML BEECHAMS", quantity: 4, price: 4000.00, expiry: "" },
+            { id: "6034000140910", name: "CIPROTAB EYE & EAR DROPS 10ML", quantity: 5, price: 600.00, expiry: "" },
+            { id: "8906009230535", name: "KLOVINAL X 6", quantity: 4, price: 4400.00, expiry: "" },
+            { id: "8906001820703", name: "PEFLOTAB 400MG CAPS X 10", quantity: 3, price: 3450.00, expiry: "" },
+            { id: "UNEU02", name: "NEUROVITE FORTE TABLETS X 100", quantity: 1, price: 16450.00, expiry: "" },
+            { id: "PD00111", name: "AMPICLOX 500MG CAPS X 100 BEECHAMS", quantity: 1, price: 22160.00, expiry: "" },
+            { id: "PD00256", name: "23G EXTRA NEEDLES X 100 (BLUE)", quantity: 1, price: 1800.00, expiry: "" },
+            { id: "S000167009156", name: "EVANS DEQUADIN LOZENGES X 250", quantity: 1, price: 5800.00, expiry: "" },
+            { id: "09991", name: "AFRAB LORATADINE SYRUP 60ML", quantity: 5, price: 750.00, expiry: "" },
+            { id: "PD45135", name: "EVANS PIRITON SYRUP 60ML", quantity: 3, price: 700.00, expiry: "" },
+            { id: "PD45533", name: "DR MEYERS MAXIQUINE 250MG", quantity: 1, price: 8500.00, expiry: "" },
+            { id: "DI", name: "DIPEPRO TRYPSIN TAB", quantity: 8, price: 1050.00, expiry: "" },
+            { id: "PD00571", name: "BRUSTAN-N SUSPENSION 100ML", quantity: 4, price: 1190.00, expiry: "" },
+            { id: "PD00620", name: "PANDA PARACETAMOL SYRUP 60ML", quantity: 9, price: 600.00, expiry: "" },
+            { id: "6151006000229", name: "M&B PARACETAMOL X 96", quantity: 6, price: 1100.00, expiry: "" },
+            { id: "6034000140682", name: "PARACETAMOL TABLETS 500MG (FIDSON) X 96", quantity: 2, price: 820.00, expiry: "" },
+            { id: "PD00010", name: "ARTHROTEC 75/200MG X 100 TABS", quantity: 1, price: 22100.00, expiry: "" },
+            { id: "PD00942", name: "ARISTOBET-N DROPS", quantity: 2, price: 1980.00, expiry: "" },
+            { id: "UCLO55", name: "CLOFENAC SR 100MG X 100SLOW RELEASE TAB", quantity: 1, price: 9070.00, expiry: "" },
+            { id: "QQ", name: "PHARMACY NYLON MEDIUM SIZE", quantity: 2, price: 3190.00, expiry: "" },
+            { id: "6154000035778", name: "EMZOR PAEDIATRIC ZINC DISPERSIBLE 10 X 10", quantity: 5, price: 1900.00, expiry: "" },
+            { id: "ULOR13", name: "LORATYN 10MG LORATADINE X 100 HOVID", quantity: 1, price: 7450.00, expiry: "" },
+            { id: "PD00435", name: "AFRAB LORATADINE 10MG TAB", quantity: 2, price: 1210.00, expiry: "" },
+            { id: "8901296108284", name: "BRUSTAN-N 400MG X 10 TAB", quantity: 24, price: 480.00, expiry: "" },
+            { id: "659436289819", name: "NEOFYLIN SYRUP 100ML( MOPSON)", quantity: 6, price: 950.00, expiry: "" },
+            { id: "PD45107", name: "ARTHEMED TAB X 6", quantity: 30, price: 970.00, expiry: "" },
+            { id: "8904185502453", name: "GREENLIN CHILDREN COUGH LINCTUS 100ML", quantity: 6, price: 950.00, expiry: "" },
+            { id: "6928623000082", name: "CAMOSUNATE JUNIOR (7-13YRS) TAB X 6", quantity: 10, price: 1350.00, expiry: "" },
+            { id: "6928623000341", name: "CAMOSUNATE 1-6YRS X 6 SACHETS", quantity: 10, price: 1180.00, expiry: "" },
+            { id: "AQD", name: "SWIPHA OMEPRAZOLE X 10", quantity: 10, price: 860.00, expiry: "" },
+            { id: "6928623000358", name: "CAMOSUNATE BELOW 1YR X 6 SACHETS", quantity: 10, price: 1000.00, expiry: "" },
+            { id: "659436289901", name: "ASMALYN SYRUP 100ML (MOPSON)", quantity: 10, price: 600.00, expiry: "" },
+            { id: "PD00186", name: "ACTIVATED CHARCOAL POWDER 50G", quantity: 2, price: 1500.00, expiry: "" },
+            { id: "8908002671797", name: "ASTYFER CAPSULES X 30", quantity: 3, price: 4180.00, expiry: "" },
+            { id: "8908002671445", name: "ASTYMIN CAPSULES X 30", quantity: 3, price: 4180.00, expiry: "" },
+            { id: "6034000140712", name: "FEROBIN PLUS CAPSULES X 30", quantity: 3, price: 1300.00, expiry: "" },
+            { id: "PD00782", name: "GETZOME CAPSULES 20MG X14 CAP.", quantity: 3, price: 1500.00, expiry: "" },
+            { id: "PD00940", name: "CALCIMAX SUSPENSION 100ML", quantity: 3, price: 1150.00, expiry: "" },
+            { id: "8901296040393", name: "SYNRIAM TAB X 3", quantity: 5, price: 5400.00, expiry: "" },
+            { id: "PD00595", name: "FOLIMOP FOLIC ACID SYRUP 100ML", quantity: 8, price: 650.00, expiry: "" },
+            { id: "799872985699", name: "NATURE FIELD VITAMIN C 1000MG(SACHET) X 10*10", quantity: 1, price: 12450.00, expiry: "" },
+            { id: "PD00853", name: "SWIFEN SUSPENSION 100MG/5ML", quantity: 6, price: 825.00, expiry: "" },
+            { id: "608887022155", name: "MOXIE VITAMIN-C SYRUP 5ML", quantity: 5, price: 1750.00, expiry: "" },
+            { id: "6009695933901", name: "GAVISCON DOUBLE ACTION 150ML", quantity: 2, price: 12900.00, expiry: "" },
+            { id: "8850769013207", name: "UVOLIN FORTE CAPSULES X 30", quantity: 1, price: 9240.00, expiry: "" },
+            { id: "PD00643", name: "PROMETHAZINE SYRUP 60ML MOPSON", quantity: 5, price: 450.00, expiry: "" },
+            { id: "6156000067643", name: "COLIPAN SYRUP 60ML", quantity: 4, price: 700.00, expiry: "" },
+            { id: "PD00576", name: "CITRAMIN VITAMIN C SYRUP 100ML", quantity: 3, price: 700.00, expiry: "" },
+            { id: "PD00387", name: "PREXAM TRANEXAMIC ACID INJECTION 5ML X 5 AMPS", quantity: 2, price: 2950.00, expiry: "" },
+            { id: "6154000035761", name: "EMZOR PAEDIATRIC ZINC 20MG X 10", quantity: 10, price: 250.00, expiry: "" },
+            { id: "PD00543", name: "WOSAN SOLUTION 10% 100ML", quantity: 2, price: 2200.00, expiry: "" },
+            { id: "PD45097", name: "GASCOL SUGAR FREE SUSPENSOIN", quantity: 2, price: 1720.00, expiry: "" },
+            { id: "6151006000168", name: "LOXAGYL SUSPENSION 60ML", quantity: 10, price: 650.00, expiry: "" },
+            { id: "PD00225", name: "2LITER METHYLATED SPIRIT", quantity: 2, price: 3300.00, expiry: "" },
+            { id: "FD45100", name: "DELE COTTONWOOL 500G", quantity: 1, price: 4560.00, expiry: "" }
         ];
 
+        // Persistent State Management
+        let drugsData = JSON.parse(localStorage.getItem('medstock_drugs')) || rawDrugsData.map(d => ({
+            ...d,
+            category: getCategoryFromName(d.name),
+            batch: `LOT-${d.id.substring(0,6).toUpperCase()}`,
+            threshold: 5,
+            location: "Main Cabinet"
+        }));
+
+        let staffAccounts = JSON.parse(localStorage.getItem('medstock_staff')) || [
+            {
+                id: "USR-001",
+                name: "Super Admin",
+                email: "admin@bridgesdiagnostics.com",
+                pass: "AdminPass123!",
+                role: "SUPER_ADMIN",
+                permissions: { dispense: true, inventory: true, logs: true, export: true }
+            }
+        ];
+
+        let auditLogs = JSON.parse(localStorage.getItem('medstock_logs')) || [];
+        let currentUser = null;
+
+        let categoryChartInstance = null;
+        let healthChartInstance = null;
+
+        // AUTHENTICATION LOGIC
         function handleLogin(e) {
             e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPassword').value;
-            if (pass === MASTER_CODE || pass === "admin123") {
+
+            const user = staffAccounts.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+            if (user) {
+                currentUser = user;
                 document.getElementById('loginOverlay').classList.add('hidden');
-                initApp();
+                document.getElementById('loginError').classList.add('hidden');
+                updateUIForPermissions();
+                refreshDashboardStats();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
             }
         }
 
+        function triggerForgotPassword() {
+            alert("Password Reset Request:\nPlease contact your Super Admin to retrieve or reset your password in the Staff & Permissions panel.");
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('loginEmail').value = "";
+            document.getElementById('loginPassword').value = "";
+        }
+
+        function updateUIForPermissions() {
+            if (!currentUser) return;
+            document.getElementById('activeUserName').innerText = currentUser.name;
+            document.getElementById('activeUserRole').innerText = currentUser.role;
+
+            const isAdmin = currentUser.role === "SUPER_ADMIN";
+            document.querySelectorAll('.nav-admin-only').forEach(el => {
+                if (isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            renderStaffTable();
+        }
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-teal-600/90', 'text-white', 'shadow-md', 'shadow-teal-600/20');
+                el.classList.add('text-slate-400');
+            });
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-400');
+                activeNav.classList.add('bg-teal-600/90', 'text-white', 'shadow-md', 'shadow-teal-600/20');
+            }
+
+            if (tabId === 'dashboard') {
+                renderCharts();
+            } else if (tabId === 'dispense') {
+                populateDispenseDropdown();
+            } else if (tabId === 'logs') {
+                filterAuditLogs();
+            }
         }
 
-        function initApp() {
-            renderInventory();
-            populateDispenseDropdown();
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('navMenu').classList.toggle('hidden');
+        });
+
+        function getDaysUntilExpiry(expiryDateStr) {
+            if (!expiryDateStr) return 999;
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const exp = new Date(expiryDateStr);
+            exp.setHours(0,0,0,0);
+            return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
         }
 
-        function renderInventory() {
+        function getExpiryStatus(expiryDateStr) {
+            if (!expiryDateStr) return { label: "Pending Entry", color: "bg-slate-100 text-slate-600 border-slate-200" };
+            const days = getDaysUntilExpiry(expiryDateStr);
+            if (days < 0) return { label: "EXPIRED", days, color: "bg-rose-100 text-rose-800 border-rose-300", isExpired: true };
+            if (days <= 30) return { label: `${days}d left`, days, color: "bg-amber-100 text-amber-800 border-amber-300", isCritical: true };
+            if (days <= 60) return { label: `${days}d left`, days, color: "bg-orange-100 text-orange-800 border-orange-300", isWarning: true };
+            return { label: "Good", days, color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+        }
+
+        function getStockStatus(qty, threshold) {
+            if (qty <= 0) return { label: "Out of Stock", color: "bg-rose-100 text-rose-800 border-rose-300" };
+            if (qty <= threshold) return { label: "Low Stock", color: "bg-amber-100 text-amber-800 border-amber-300" };
+            return { label: "In Stock", color: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+        }
+
+        function refreshDashboardStats() {
+            let total = drugsData.length;
+            let lowStockCount = 0;
+            let expiringSoonCount = 0;
+            let expiredCount = 0;
+
+            drugsData.forEach(d => {
+                if (d.quantity <= d.threshold) lowStockCount++;
+                if (d.expiry) {
+                    const days = getDaysUntilExpiry(d.expiry);
+                    if (days < 0) expiredCount++;
+                    else if (days <= 60) expiringSoonCount++;
+                }
+            });
+
+            document.getElementById('kpiTotalDrugs').innerText = total;
+            document.getElementById('kpiLowStock').innerText = lowStockCount;
+            document.getElementById('kpiExpiringSoon').innerText = expiringSoonCount;
+            document.getElementById('kpiExpired').innerText = expiredCount;
+            document.getElementById('badgeTotalDrugs').innerText = total;
+
+            renderUrgentAlertsList();
+            renderDashboardRecentLogs();
+            renderCharts();
+            localStorage.setItem('medstock_drugs', JSON.stringify(drugsData));
+        }
+
+        function renderUrgentAlertsList() {
+            const container = document.getElementById('urgentAlertsList');
+            container.innerHTML = "";
+
+            const alerts = drugsData.filter(d => {
+                const exp = getExpiryStatus(d.expiry);
+                return d.quantity <= d.threshold || exp.isExpired || exp.isCritical || exp.isWarning;
+            });
+
+            if (alerts.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs"><i class="fa-solid fa-circle-check text-emerald-500 text-xl mb-1 block"></i>All items are healthy with sufficient stock.</div>`;
+                return;
+            }
+
+            alerts.forEach(item => {
+                const expStatus = getExpiryStatus(item.expiry);
+                const stockStatus = getStockStatus(item.quantity, item.threshold);
+
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs";
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-800">${item.name}</p>
+                        <p class="text-[11px] text-slate-500">Qty: <span class="font-bold text-slate-700">${item.quantity}</span> | ID: ${item.id}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${stockStatus.color}">${stockStatus.label}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${expStatus.color}">${expStatus.label}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderDashboardRecentLogs() {
+            const container = document.getElementById('dashboardRecentLogs');
+            container.innerHTML = "";
+
+            if (auditLogs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No recent activity.</p>`;
+                return;
+            }
+
+            auditLogs.slice(0, 5).forEach(log => {
+                const div = document.createElement('div');
+                div.className = "p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <span class="font-semibold text-slate-800">${log.drugName}</span>
+                        <p class="text-[10px] text-slate-400">${log.timestamp} • By: ${log.staffName}</p>
+                    </div>
+                    <span class="px-2 py-0.5 font-bold rounded text-[10px] bg-teal-100 text-teal-800">-${log.qty} Units</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderCharts() {
+            const categoryTotals = {};
+            drugsData.forEach(d => {
+                categoryTotals[d.category] = (categoryTotals[d.category] || 0) + d.quantity;
+            });
+
+            const catCtx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            categoryChartInstance = new Chart(catCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryTotals),
+                    datasets: [{
+                        label: 'Total Stock Volume',
+                        data: Object.values(categoryTotals),
+                        backgroundColor: '#14b8a6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            let optimalCount = 0;
+            let lowCount = 0;
+            let outCount = 0;
+
+            drugsData.forEach(d => {
+                if (d.quantity <= 0) outCount++;
+                else if (d.quantity <= d.threshold) lowCount++;
+                else optimalCount++;
+            });
+
+            const healthCtx = document.getElementById('healthChart').getContext('2d');
+            if (healthChartInstance) healthChartInstance.destroy();
+
+            healthChartInstance = new Chart(healthCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Optimal Stock', 'Low Stock (&le;5)', 'Out of Stock'],
+                    datasets: [{
+                        data: [optimalCount, lowCount, outCount],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function renderInventoryTable(itemsToRender = drugsData) {
             const tbody = document.getElementById('inventoryTableBody');
-            tbody.innerHTML = inventoryData.map(item => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="py-3 px-4 font-semibold text-slate-800">${item.name}</td>
-                    <td class="py-3 px-4 text-slate-600">${item.category}</td>
-                    <td class="py-3 px-4 text-slate-600">${item.batch}</td>
-                    <td class="py-3 px-4 text-center font-bold text-slate-800">${item.qty}</td>
-                    <td class="py-3 px-4 text-slate-600">${item.expiry}</td>
-                    <td class="py-3 px-4 text-slate-600">₦${item.costPrice.toLocaleString()}</td>
-                    <td class="py-3 px-4 text-teal-700 font-bold">₦${item.sellingPrice.toLocaleString()}</td>
-                    <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">Active</span></td>
-                    <td class="py-3 px-4 text-right">
-                        <button onclick="editItem(${item.id})" class="text-teal-600 hover:text-teal-800 text-xs font-medium"><i class="fa-solid fa-pen"></i></button>
+            const emptyMsg = document.getElementById('emptyInventoryMsg');
+            tbody.innerHTML = "";
+
+            if (itemsToRender.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                return;
+            } else {
+                emptyMsg.classList.add('hidden');
+            }
+
+            itemsToRender.forEach(item => {
+                const expStatus = getExpiryStatus(item.expiry);
+                const stockStatus = getStockStatus(item.quantity, item.threshold);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-800">
+                        ${item.name}
+                        <div class="text-[10px] text-slate-400">ID: ${item.id}</div>
                     </td>
-                </tr>
-            `).join('');
+                    <td class="py-3 px-4 text-slate-600">${item.category}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${item.batch}</span>
+                        <div class="text-[10px] text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i>${item.location}</div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="font-bold text-sm ${item.quantity <= item.threshold ? 'text-amber-600' : 'text-slate-800'}">${item.quantity}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <input type="date" value="${item.expiry}" onchange="updateExpiryInline('${item.id}', this.value)" class="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-teal-500">
+                    </td>
+                    <td class="py-3 px-4 font-bold text-slate-800">
+                        ₦${item.price.toLocaleString('en-NG', {minimumFractionDigits: 2})}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex flex-col gap-1 items-center">
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${stockStatus.color}">${stockStatus.label}</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${expStatus.color}">${expStatus.label}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button onclick="triggerDispenseForItem('${item.id}')" title="Quick Dispense" class="p-1.5 rounded-lg text-teal-600 hover:bg-teal-50 border border-transparent hover:border-teal-200">
+                                <i class="fa-solid fa-hand-holding-medical text-sm"></i>
+                            </button>
+                            <button onclick="triggerEditDrugModal('${item.id}')" title="Edit Item" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200">
+                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </button>
+                            <button onclick="deleteDrugItem('${item.id}')" title="Delete Item" class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateExpiryInline(id, value) {
+            const item = drugsData.find(d => d.id === id);
+            if (item) {
+                item.expiry = value;
+                refreshDashboardStats();
+            }
+        }
+
+        function filterInventory() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = drugsData.filter(item => {
+                const matchesQuery = item.name.toLowerCase().includes(query) ||
+                                     item.id.toLowerCase().includes(query) ||
+                                     item.batch.toLowerCase().includes(query) ||
+                                     item.category.toLowerCase().includes(query);
+
+                const matchesCat = category === 'ALL' || item.category === category;
+
+                let matchesStatus = true;
+                const days = getDaysUntilExpiry(item.expiry);
+
+                if (status === 'LOW_STOCK') matchesStatus = item.quantity <= item.threshold && item.quantity > 0;
+                else if (status === 'OUT_OF_STOCK') matchesStatus = item.quantity === 0;
+                else if (status === 'EXPIRING_SOON') matchesStatus = item.expiry && days >= 0 && days <= 60;
+                else if (status === 'EXPIRED') matchesStatus = item.expiry && days < 0;
+                else if (status === 'NO_EXPIRY') matchesStatus = !item.expiry;
+
+                return matchesQuery && matchesCat && matchesStatus;
+            });
+
+            renderInventoryTable(filtered);
+        }
+
+        function triggerNewDrugModal() {
+            if (currentUser && !currentUser.permissions.inventory && currentUser.role !== "SUPER_ADMIN") {
+                alert("Permission Denied: You do not have authorization to modify inventory.");
+                return;
+            }
+            document.getElementById('modalTitle').innerText = "Add New Drug Item";
+            document.getElementById('drugForm').reset();
+            document.getElementById('drugId').value = "";
+            document.getElementById('drugModal').classList.remove('hidden');
+        }
+
+        function triggerEditDrugModal(id) {
+            if (currentUser && !currentUser.permissions.inventory && currentUser.role !== "SUPER_ADMIN") {
+                alert("Permission Denied: You do not have authorization to edit inventory.");
+                return;
+            }
+            const item = drugsData.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTitle').innerText = "Edit Drug Details";
+            document.getElementById('drugId').value = item.id;
+            document.getElementById('formDrugName').value = item.name;
+            document.getElementById('formCategory').value = item.category;
+            document.getElementById('formBatch').value = item.batch;
+            document.getElementById('formQty').value = item.quantity;
+            document.getElementById('formThreshold').value = item.threshold;
+            document.getElementById('formExpiry').value = item.expiry;
+            document.getElementById('formPrice').value = item.price;
+            document.getElementById('formLocation').value = item.location;
+
+            document.getElementById('drugModal').classList.remove('hidden');
+        }
+
+        function closeDrugModal() {
+            document.getElementById('drugModal').classList.add('hidden');
+        }
+
+        function handleDrugFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('drugId').value;
+            const drugName = document.getElementById('formDrugName').value.trim();
+            const category = document.getElementById('formCategory').value;
+            const batch = document.getElementById('formBatch').value.trim();
+            const qty = parseInt(document.getElementById('formQty').value);
+            const threshold = parseInt(document.getElementById('formThreshold').value);
+            const expiry = document.getElementById('formExpiry').value;
+            const price = parseFloat(document.getElementById('formPrice').value);
+            const location = document.getElementById('formLocation').value.trim() || 'Main Cabinet';
+
+            if (editId) {
+                const item = drugsData.find(d => d.id === editId);
+                if (item) {
+                    item.name = drugName;
+                    item.category = category;
+                    item.batch = batch;
+                    item.quantity = qty;
+                    item.threshold = threshold;
+                    item.expiry = expiry;
+                    item.price = price;
+                    item.location = location;
+                }
+            } else {
+                const newId = `DRUG-${String(drugsData.length + 1).padStart(3, '0')}`;
+                drugsData.push({ id: newId, name: drugName, category, batch, quantity: qty, threshold, expiry, price, location });
+            }
+
+            closeDrugModal();
+            refreshDashboardStats();
+            filterInventory();
+        }
+
+        function deleteDrugItem(id) {
+            if (currentUser && !currentUser.permissions.inventory && currentUser.role !== "SUPER_ADMIN") {
+                alert("Permission Denied.");
+                return;
+            }
+            const item = drugsData.find(d => d.id === id);
+            if (item && confirm(`Are you sure you want to delete "${item.name}"?`)) {
+                drugsData = drugsData.filter(d => d.id !== id);
+                refreshDashboardStats();
+                filterInventory();
+            }
         }
 
         function populateDispenseDropdown() {
             const select = document.getElementById('dispenseDrugSelect');
-            select.innerHTML = '<option value="">-- Choose Item from Inventory --</option>' + 
-                inventoryData.map(i => `<option value="${i.id}">${i.name} (Available: ${i.qty}) - ₦${i.sellingPrice}/unit</option>`).join('');
+            select.innerHTML = `<option value="">-- Choose Item from Inventory --</option>`;
+
+            drugsData.forEach(d => {
+                const option = document.createElement('option');
+                option.value = d.id;
+                option.innerText = `${d.name} (Qty: ${d.quantity} | Price: ₦${d.price.toLocaleString()})`;
+                select.appendChild(option);
+            });
+        }
+
+        function triggerDispenseForItem(id) {
+            switchTab('dispense');
+            document.getElementById('dispenseDrugSelect').value = id;
+            onDispenseDrugChange();
         }
 
         function onDispenseDrugChange() {
             const id = document.getElementById('dispenseDrugSelect').value;
-            const card = document.getElementById('selectedDrugCard');
-            if(!id) {
-                card.classList.add('hidden');
+            const previewCard = document.getElementById('selectedDrugCard');
+            const warningBanner = document.getElementById('dispenseWarningBanner');
+            const warningTitle = document.getElementById('dispenseWarningTitle');
+            const warningText = document.getElementById('dispenseWarningText');
+            const btnSubmit = document.getElementById('btnDispenseSubmit');
+
+            if (!id) {
+                previewCard.classList.add('hidden');
+                warningBanner.classList.add('hidden');
                 return;
             }
-            const item = inventoryData.find(i => i.id == id);
-            if(item) {
-                card.classList.remove('hidden');
-                document.getElementById('previewDrugName').innerText = item.name;
-                document.getElementById('previewDrugMeta').innerText = `Batch: ${item.batch}`;
-                document.getElementById('previewQty').innerText = item.qty;
-                document.getElementById('previewExpiry').innerText = item.expiry;
-                document.getElementById('previewPrice').innerText = `₦${item.sellingPrice.toLocaleString()}`;
-                calculateDispenseTotal();
+
+            const drug = drugsData.find(d => d.id === id);
+            if (!drug) return;
+
+            document.getElementById('previewDrugName').innerText = drug.name;
+            document.getElementById('previewDrugMeta').innerText = `Batch: ${drug.batch} | Location: ${drug.location}`;
+            document.getElementById('previewQty').innerText = drug.quantity;
+            document.getElementById('previewExpiry').innerText = drug.expiry || "Pending Entry";
+            document.getElementById('previewPrice').innerText = `₦${drug.price.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
+
+            const expStatus = getExpiryStatus(drug.expiry);
+            const stockStatus = getStockStatus(drug.quantity, drug.threshold);
+
+            document.getElementById('previewBadges').innerHTML = `
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${stockStatus.color}">${stockStatus.label}</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${expStatus.color}">${expStatus.label}</span>
+            `;
+
+            previewCard.classList.remove('hidden');
+
+            btnSubmit.disabled = false;
+            btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            if (expStatus.isExpired) {
+                warningTitle.innerText = "SAFETY ALERT: Item Expired!";
+                warningText.innerText = "Dispensing expired medical supplies is prohibited.";
+                warningBanner.classList.remove('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (drug.quantity <= 0) {
+                warningTitle.innerText = "OUT OF STOCK";
+                warningText.innerText = "0 units remaining. Cannot dispense.";
+                warningBanner.classList.remove('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                warningBanner.classList.add('hidden');
             }
+
+            calculateDispenseTotal();
         }
 
         function calculateDispenseTotal() {
             const id = document.getElementById('dispenseDrugSelect').value;
-            const qty = parseInt(document.getElementById('dispenseQuantity').value) || 0;
-            const item = inventoryData.find(i => i.id == id);
-            if(item) {
-                const total = qty * item.sellingPrice;
-                document.getElementById('dispenseTotalCost').value = `₦${total.toLocaleString()}`;
+            const qtyInput = parseInt(document.getElementById('dispenseQuantity').value) || 0;
+            const totalCostField = document.getElementById('dispenseTotalCost');
+
+            if (!id) return;
+            const drug = drugsData.find(d => d.id === id);
+            if (drug) {
+                const total = drug.price * qtyInput;
+                totalCostField.value = `₦${total.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
             }
         }
 
         function handleDispenseSubmit(e) {
             e.preventDefault();
-            alert('Dispensed successfully and inventory updated!');
+
+            if (currentUser && !currentUser.permissions.dispense && currentUser.role !== "SUPER_ADMIN") {
+                alert("Permission Denied: You do not have dispensing authorization.");
+                return;
+            }
+
+            const id = document.getElementById('dispenseDrugSelect').value;
+            const qty = parseInt(document.getElementById('dispenseQuantity').value);
+            const recipient = document.getElementById('dispenseRecipient').value.trim();
+            const refCode = document.getElementById('dispenseRef').value.trim();
+            const notes = document.getElementById('dispenseNotes').value.trim();
+
+            const drug = drugsData.find(d => d.id === id);
+
+            if (!drug || qty > drug.quantity) {
+                alert("Insufficient stock quantity available.");
+                return;
+            }
+
+            drug.quantity -= qty;
+
+            auditLogs.unshift({
+                timestamp: new Date().toLocaleString(),
+                dateISO: new Date().toISOString().split('T')[0],
+                staffName: currentUser ? currentUser.name : "System",
+                action: "Dispensed",
+                drugName: drug.name,
+                qty,
+                stockRemaining: drug.quantity,
+                recipient: recipient || 'General Patient',
+                notes: notes || `Ref: ${refCode || 'N/A'}`
+            });
+
+            localStorage.setItem('medstock_logs', JSON.stringify(auditLogs));
+
             document.getElementById('dispenseForm').reset();
             document.getElementById('selectedDrugCard').classList.add('hidden');
+            
+            refreshDashboardStats();
+            filterInventory();
+            filterAuditLogs();
+
+            alert(`Successfully dispensed ${qty} unit(s) of ${drug.name}!`);
+            switchTab('logs');
         }
+
+        function filterAuditLogs() {
+            const query = document.getElementById('logSearchInput').value.toLowerCase().trim();
+            const start = document.getElementById('logStartDate').value;
+            const end = document.getElementById('logEndDate').value;
+
+            const filtered = auditLogs.filter(log => {
+                const matchesQuery = log.drugName.toLowerCase().includes(query) ||
+                                     log.staffName.toLowerCase().includes(query) ||
+                                     log.recipient.toLowerCase().includes(query);
+
+                let matchesDate = true;
+                if (log.dateISO) {
+                    if (start && log.dateISO < start) matchesDate = false;
+                    if (end && log.dateISO > end) matchesDate = false;
+                }
+
+                return matchesQuery && matchesDate;
+            });
+
+            renderAuditLogTable(filtered);
+        }
+
+        function renderAuditLogTable(logsToRender = auditLogs) {
+            const tbody = document.getElementById('auditLogTableBody');
+            const emptyMsg = document.getElementById('emptyLogMsg');
+            tbody.innerHTML = "";
+
+            if (logsToRender.length === 0) {
+                emptyMsg.classList.remove('hidden');
+                return;
+            } else {
+                emptyMsg.classList.add('hidden');
+            }
+
+            logsToRender.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono text-slate-500">${log.timestamp}</td>
+                    <td class="py-3 px-4 font-bold text-slate-700">${log.staffName}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 font-bold rounded text-[10px] bg-teal-100 text-teal-800">${log.action}</span></td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${log.drugName}</td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-700">${log.qty}</td>
+                    <td class="py-3 px-4 text-center font-bold text-teal-600">${log.stockRemaining}</td>
+                    <td class="py-3 px-4 text-slate-600">${log.recipient}</td>
+                    <td class="py-3 px-4 text-slate-400 italic">${log.notes}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearAuditLog() {
+            if (currentUser && currentUser.role !== "SUPER_ADMIN") {
+                alert("Super Admin authorization required to clear audit history.");
+                return;
+            }
+            if (confirm("Clear all audit activity logs?")) {
+                auditLogs = [];
+                localStorage.setItem('medstock_logs', JSON.stringify(auditLogs));
+                filterAuditLogs();
+                refreshDashboardStats();
+            }
+        }
+
+        // STAFF MANAGEMENT FUNCTIONS
+        function renderStaffTable() {
+            const tbody = document.getElementById('staffTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            staffAccounts.forEach(staff => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-100 text-xs";
+                
+                const perms = [];
+                if (staff.permissions.dispense) perms.push("Dispense");
+                if (staff.permissions.inventory) perms.push("Inventory");
+                if (staff.permissions.logs) perms.push("Logs");
+                if (staff.permissions.export) perms.push("PDF");
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-800">
+                        ${staff.name}
+                        <div class="text-[10px] font-normal text-slate-400">${staff.email}</div>
+                    </td>
+                    <td class="py-3 px-4 font-mono">
+                        <div class="flex items-center gap-2">
+                            <span id="pass-text-${staff.id}">••••••••</span>
+                            <button onclick="togglePasswordVisibility('${staff.id}', '${staff.pass}')" class="text-slate-400 hover:text-teal-600 text-xs" title="Toggle password view">
+                                <i id="pass-icon-${staff.id}" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-teal-700">${staff.role}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex flex-wrap gap-1">
+                            ${perms.map(p => `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded text-[10px] border border-slate-200">${p}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openResetPassModal('${staff.id}', '${staff.name}')" class="text-teal-600 hover:text-teal-800 font-semibold text-xs flex items-center gap-1">
+                                <i class="fa-solid fa-key"></i> Reset Pass
+                            </button>
+                            ${staff.role !== 'SUPER_ADMIN' ? `
+                                <button onclick="deleteStaffAccount('${staff.id}')" class="text-rose-600 hover:text-rose-800 font-semibold text-xs">
+                                    Remove
+                                </button>
+                            ` : '<span class="text-slate-400 italic text-[11px] ml-1">Primary Admin</span>'}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function togglePasswordVisibility(id, actualPass) {
+            const passText = document.getElementById(`pass-text-${id}`);
+            const passIcon = document.getElementById(`pass-icon-${id}`);
+            if (passText.innerText === '••••••••') {
+                passText.innerText = actualPass;
+                passIcon.classList.remove('fa-eye');
+                passIcon.classList.add('fa-eye-slash');
+            } else {
+                passText.innerText = '••••••••';
+                passIcon.classList.remove('fa-eye-slash');
+                passIcon.classList.add('fa-eye');
+            }
+        }
+
+        function openResetPassModal(id, name) {
+            document.getElementById('resetPassStaffId').value = id;
+            document.getElementById('resetPassStaffName').value = name;
+            document.getElementById('resetNewPass').value = '';
+            document.getElementById('resetPassModal').classList.remove('hidden');
+        }
+
+        function closeResetPassModal() {
+            document.getElementById('resetPassModal').classList.add('hidden');
+        }
+
+        function handleResetPasswordSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('resetPassStaffId').value;
+            const newPass = document.getElementById('resetNewPass').value;
+
+            const staff = staffAccounts.find(s => s.id === id);
+            if (staff) {
+                staff.pass = newPass;
+                localStorage.setItem('medstock_staff', JSON.stringify(staffAccounts));
+                renderStaffTable();
+                closeResetPassModal();
+                alert(`Password updated successfully for ${staff.name}!`);
+            }
+        }
+
+        function triggerNewStaffModal() {
+            document.getElementById('staffModal').classList.remove('hidden');
+        }
+
+        function closeStaffModal() {
+            document.getElementById('staffModal').classList.add('hidden');
+        }
+
+        function handleStaffCreate(e) {
+            e.preventDefault();
+            const name = document.getElementById('staffName').value.trim();
+            const email = document.getElementById('staffEmail').value.trim();
+            const pass = document.getElementById('staffPass').value;
+
+            const newStaff = {
+                id: `USR-${String(staffAccounts.length + 1).padStart(3, '0')}`,
+                name,
+                email,
+                pass,
+                role: "STAFF",
+                permissions: {
+                    dispense: document.getElementById('permDispense').checked,
+                    inventory: document.getElementById('permManageInventory').checked,
+                    logs: document.getElementById('permViewLogs').checked,
+                    export: document.getElementById('permExportPDF').checked
+                }
+            };
+
+            staffAccounts.push(newStaff);
+            localStorage.setItem('medstock_staff', JSON.stringify(staffAccounts));
+            renderStaffTable();
+            closeStaffModal();
+            alert(`Staff account created for ${name}!`);
+        }
+
+        function deleteStaffAccount(id) {
+            if (confirm("Remove this staff account?")) {
+                staffAccounts = staffAccounts.filter(s => s.id !== id);
+                localStorage.setItem('medstock_staff', JSON.stringify(staffAccounts));
+                renderStaffTable();
+            }
+        }
+
+        // GENERATE PDF REPORT FOR ACTIVITY LOGS
+        function downloadActivityPDF() {
+            if (currentUser && !currentUser.permissions.export && currentUser.role !== "SUPER_ADMIN") {
+                alert("Permission Denied: PDF Export privilege required.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Bridges Diagnostics - MedStock Activity Audit Trail", 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleString()} | Requested by: ${currentUser ? currentUser.name : 'Admin'}`, 14, 22);
+
+            const tableRows = [];
+            auditLogs.forEach(log => {
+                tableRows.push([
+                    log.timestamp,
+                    log.staffName || 'System',
+                    log.action,
+                    log.drugName,
+                    log.qty,
+                    log.stockRemaining,
+                    log.recipient
+                ]);
+            });
+
+            doc.autoTable({
+                head: [['Date/Time', 'Staff', 'Action', 'Drug Item', 'Qty', 'Stock', 'Recipient']],
+                body: tableRows,
+                startY: 28,
+                theme: 'striped',
+                headStyles: { fillColor: [13, 148, 136] },
+                styles: { fontSize: 8 }
+            });
+
+            doc.save(`MedStock_Activity_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function exportInventoryReport() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Product ID,Product Description,Category,Qty Remaining,Unit Price (NGN),Expiry Date\n";
+
+            drugsData.forEach(d => {
+                csvContent += `"${d.id}","${d.name}","${d.category}",${d.quantity},${d.price},"${d.expiry}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `medstock_inventory_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = function() {
+            refreshDashboardStats();
+            renderInventoryTable();
+            filterAuditLogs();
+            renderCharts();
+        };
     </script>
 </body>
 </html>
