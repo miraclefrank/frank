@@ -1,4 +1,4 @@
-Bridges4life$<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
@@ -66,7 +66,7 @@ Bridges4life$<!DOCTYPE html>
                 </div>
                 <div class="pt-6 border-t border-teal-600/50 text-[11px] text-teal-200 relative z-10 flex items-center justify-between">
                     <span><i class="fa-solid fa-shield-halved mr-1"></i> Authorized Personnel Only</span>
-                    <span>v2.4</span>
+                    <span>v2.6</span>
                 </div>
             </div>
 
@@ -80,7 +80,7 @@ Bridges4life$<!DOCTYPE html>
                 <form onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email / Gmail Address</label>
-                        <input type="email" id="loginEmail" required placeholder="staff@bridgesdiagnostics.com" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <input type="email" id="loginEmail" required placeholder="admin@bridgesdiagnostics.com" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none">
                     </div>
 
                     <div>
@@ -142,7 +142,7 @@ Bridges4life$<!DOCTYPE html>
                 <a href="#" onclick="switchTab('inventory')" id="nav-inventory" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-200">
                     <i class="fa-solid fa-boxes-stacked w-5 text-center text-base"></i>
                     <span>Drug Inventory</span>
-                    <span id="badgeTotalDrugs" class="ml-auto bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full border border-slate-700">101</span>
+                    <span id="badgeTotalDrugs" class="ml-auto bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full border border-slate-700">109</span>
                 </a>
                 <a href="#" onclick="switchTab('dispense')" id="nav-dispense" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-200">
                     <i class="fa-solid fa-hand-holding-medical w-5 text-center text-base"></i>
@@ -217,7 +217,7 @@ Bridges4life$<!DOCTYPE html>
                         </div>
                         <div>
                             <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Items</p>
-                            <h3 id="kpiTotalDrugs" class="text-2xl font-bold text-slate-800 mt-0.5">101</h3>
+                            <h3 id="kpiTotalDrugs" class="text-2xl font-bold text-slate-800 mt-0.5">109</h3>
                             <p class="text-[11px] text-slate-400">Unique registered items</p>
                         </div>
                     </div>
@@ -356,7 +356,8 @@ Bridges4life$<!DOCTYPE html>
                                     <th class="py-3.5 px-4">Batch / Location</th>
                                     <th class="py-3.5 px-4 text-center">In Stock</th>
                                     <th class="py-3.5 px-4">Expiry Date</th>
-                                    <th class="py-3.5 px-4">Unit Price (₦)</th>
+                                    <th class="py-3.5 px-4">Cost Price (₦)</th>
+                                    <th class="py-3.5 px-4 text-teal-700 font-bold">Selling Price (₦)</th>
                                     <th class="py-3.5 px-4 text-center">Status</th>
                                     <th class="py-3.5 px-4 text-right">Actions</th>
                                 </tr>
@@ -377,7 +378,7 @@ Bridges4life$<!DOCTYPE html>
                     <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                         <div>
                             <h3 class="font-bold text-slate-800 text-base">Dispense Pharmaceutical Item</h3>
-                            <p class="text-xs text-slate-500">Record drug issuance and automatically deduct stock.</p>
+                            <p class="text-xs text-slate-500">Record drug issuance and automatically deduct stock at the configured selling price.</p>
                         </div>
                         <span class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-full">
                             <i class="fa-solid fa-shield-halved mr-1"></i> Validated
@@ -410,7 +411,7 @@ Bridges4life$<!DOCTYPE html>
                                     <span id="previewExpiry" class="font-bold text-slate-700 text-sm">-</span>
                                 </div>
                                 <div>
-                                    <span class="text-slate-400 block">Unit Price:</span>
+                                    <span class="text-slate-400 block">Unit Selling Price:</span>
                                     <span id="previewPrice" class="font-bold text-teal-700 text-sm">₦0.00</span>
                                 </div>
                             </div>
@@ -604,8 +605,13 @@ Bridges4life$<!DOCTYPE html>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Sell Price (₦) <span class="text-rose-500">*</span></label>
-                        <input type="number" id="formPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Cost Price (₦)</label>
+                        <input type="number" id="formPrice" step="0.01" min="0" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-teal-700 mb-1">Unit Selling Price (₦) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="formSellingPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg font-bold text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20">
                     </div>
 
                     <div class="md:col-span-2">
@@ -716,7 +722,7 @@ Bridges4life$<!DOCTYPE html>
             return "General Pharmaceuticals";
         }
 
-        // Full dataset containing all 101 pharmaceutical items from invoice pages
+        // Full dataset containing all 109 pharmaceutical items
         const rawDrugsData = [
             { id: "OME", name: "OMEPRAZOLE INJECTION 40MG", quantity: 20, price: 650.00, expiry: "" },
             { id: "pilat8766565", name: "PENTAZOCINE INJECTION", quantity: 4, price: 6900.00, expiry: "" },
@@ -826,17 +832,30 @@ Bridges4life$<!DOCTYPE html>
             { id: "PD45097", name: "GASCOL SUGAR FREE SUSPENSOIN", quantity: 2, price: 1720.00, expiry: "" },
             { id: "6151006000168", name: "LOXAGYL SUSPENSION 60ML", quantity: 10, price: 650.00, expiry: "" },
             { id: "PD00225", name: "2LITER METHYLATED SPIRIT", quantity: 2, price: 3300.00, expiry: "" },
-            { id: "FD45100", name: "DELE COTTONWOOL 500G", quantity: 1, price: 4560.00, expiry: "" }
+            { id: "FD45100", name: "DELE COTTONWOOL 500G", quantity: 1, price: 4560.00, expiry: "" },
+            { id: "ADD106", name: "ZINACEF 750MG INJECTION", quantity: 15, price: 2500.00, expiry: "" },
+            { id: "ADD107", name: "ROCEPHIN 1G INJECTION", quantity: 10, price: 3200.00, expiry: "" },
+            { id: "ADD108", name: "BUSCOPAN INJECTION", quantity: 8, price: 1200.00, expiry: "" },
+            { id: "ADD109", name: "TRAMADOL 100MG INJECTION", quantity: 20, price: 950.00, expiry: "" },
+            { id: "ADD110", name: "DICLOFENAC SODIUM INJECTION", quantity: 30, price: 450.00, expiry: "" },
+            { id: "ADD111", name: "VALIUM 10MG INJECTION", quantity: 6, price: 1800.00, expiry: "" },
+            { id: "ADD112", name: "LASIX (FUROSEMIDE) INJECTION", quantity: 12, price: 850.00, expiry: "" },
+            { id: "ADD113", name: "HYDROCORTISONE SODIUM SUCCINATE 100MG", quantity: 15, price: 1100.00, expiry: "" }
         ];
 
-        // Persistent State Management
-        let drugsData = JSON.parse(localStorage.getItem('medstock_drugs')) || rawDrugsData.map(d => ({
-            ...d,
-            category: getCategoryFromName(d.name),
-            batch: `LOT-${d.id.substring(0,6).toUpperCase()}`,
-            threshold: 5,
-            location: "Main Cabinet"
-        }));
+        // Persistent State Management (Clears stale localStorage cache if count mismatched)
+        let drugsData = JSON.parse(localStorage.getItem('medstock_drugs'));
+        if (!drugsData || drugsData.length !== rawDrugsData.length) {
+            drugsData = rawDrugsData.map(d => ({
+                ...d,
+                category: getCategoryFromName(d.name),
+                batch: `LOT-${d.id.substring(0,6).toUpperCase()}`,
+                threshold: 5,
+                location: "Main Cabinet",
+                sellingPrice: Math.round(d.price * 1.35)
+            }));
+            localStorage.setItem('medstock_drugs', JSON.stringify(drugsData));
+        }
 
         let staffAccounts = JSON.parse(localStorage.getItem('medstock_staff')) || [
             {
@@ -1115,6 +1134,7 @@ Bridges4life$<!DOCTYPE html>
             itemsToRender.forEach(item => {
                 const expStatus = getExpiryStatus(item.expiry);
                 const stockStatus = getStockStatus(item.quantity, item.threshold);
+                const sellingPrice = item.sellingPrice || Math.round(item.price * 1.35);
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-100 text-xs";
@@ -1134,8 +1154,11 @@ Bridges4life$<!DOCTYPE html>
                     <td class="py-3 px-4">
                         <input type="date" value="${item.expiry}" onchange="updateExpiryInline('${item.id}', this.value)" class="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-teal-500">
                     </td>
-                    <td class="py-3 px-4 font-bold text-slate-800">
+                    <td class="py-3 px-4 font-semibold text-slate-600">
                         ₦${item.price.toLocaleString('en-NG', {minimumFractionDigits: 2})}
+                    </td>
+                    <td class="py-3 px-4 font-bold text-teal-700">
+                        ₦${sellingPrice.toLocaleString('en-NG', {minimumFractionDigits: 2})}
                     </td>
                     <td class="py-3 px-4 text-center">
                         <div class="flex flex-col gap-1 items-center">
@@ -1205,6 +1228,8 @@ Bridges4life$<!DOCTYPE html>
             document.getElementById('modalTitle').innerText = "Add New Drug Item";
             document.getElementById('drugForm').reset();
             document.getElementById('drugId').value = "";
+            document.getElementById('formPrice').value = "";
+            document.getElementById('formSellingPrice').value = "";
             document.getElementById('drugModal').classList.remove('hidden');
         }
 
@@ -1225,6 +1250,7 @@ Bridges4life$<!DOCTYPE html>
             document.getElementById('formThreshold').value = item.threshold;
             document.getElementById('formExpiry').value = item.expiry;
             document.getElementById('formPrice').value = item.price;
+            document.getElementById('formSellingPrice').value = item.sellingPrice || Math.round(item.price * 1.35);
             document.getElementById('formLocation').value = item.location;
 
             document.getElementById('drugModal').classList.remove('hidden');
@@ -1244,7 +1270,8 @@ Bridges4life$<!DOCTYPE html>
             const qty = parseInt(document.getElementById('formQty').value);
             const threshold = parseInt(document.getElementById('formThreshold').value);
             const expiry = document.getElementById('formExpiry').value;
-            const price = parseFloat(document.getElementById('formPrice').value);
+            const price = parseFloat(document.getElementById('formPrice').value) || 0;
+            const sellingPrice = parseFloat(document.getElementById('formSellingPrice').value) || 0;
             const location = document.getElementById('formLocation').value.trim() || 'Main Cabinet';
 
             if (editId) {
@@ -1257,11 +1284,12 @@ Bridges4life$<!DOCTYPE html>
                     item.threshold = threshold;
                     item.expiry = expiry;
                     item.price = price;
+                    item.sellingPrice = sellingPrice;
                     item.location = location;
                 }
             } else {
                 const newId = `DRUG-${String(drugsData.length + 1).padStart(3, '0')}`;
-                drugsData.push({ id: newId, name: drugName, category, batch, quantity: qty, threshold, expiry, price, location });
+                drugsData.push({ id: newId, name: drugName, category, batch, quantity: qty, threshold, expiry, price, sellingPrice, location });
             }
 
             closeDrugModal();
@@ -1287,9 +1315,10 @@ Bridges4life$<!DOCTYPE html>
             select.innerHTML = `<option value="">-- Choose Item from Inventory --</option>`;
 
             drugsData.forEach(d => {
+                const sellPrice = d.sellingPrice || Math.round(d.price * 1.35);
                 const option = document.createElement('option');
                 option.value = d.id;
-                option.innerText = `${d.name} (Qty: ${d.quantity} | Price: ₦${d.price.toLocaleString()})`;
+                option.innerText = `${d.name} (Qty: ${d.quantity} | Selling Price: ₦${sellPrice.toLocaleString()})`;
                 select.appendChild(option);
             });
         }
@@ -1317,11 +1346,13 @@ Bridges4life$<!DOCTYPE html>
             const drug = drugsData.find(d => d.id === id);
             if (!drug) return;
 
+            const sellPrice = drug.sellingPrice || Math.round(drug.price * 1.35);
+
             document.getElementById('previewDrugName').innerText = drug.name;
             document.getElementById('previewDrugMeta').innerText = `Batch: ${drug.batch} | Location: ${drug.location}`;
             document.getElementById('previewQty').innerText = drug.quantity;
             document.getElementById('previewExpiry').innerText = drug.expiry || "Pending Entry";
-            document.getElementById('previewPrice').innerText = `₦${drug.price.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
+            document.getElementById('previewPrice').innerText = `₦${sellPrice.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
 
             const expStatus = getExpiryStatus(drug.expiry);
             const stockStatus = getStockStatus(drug.quantity, drug.threshold);
@@ -1363,7 +1394,8 @@ Bridges4life$<!DOCTYPE html>
             if (!id) return;
             const drug = drugsData.find(d => d.id === id);
             if (drug) {
-                const total = drug.price * qtyInput;
+                const sellPrice = drug.sellingPrice || Math.round(drug.price * 1.35);
+                const total = sellPrice * qtyInput;
                 totalCostField.value = `₦${total.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
             }
         }
@@ -1657,10 +1689,11 @@ Bridges4life$<!DOCTYPE html>
 
         function exportInventoryReport() {
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Product ID,Product Description,Category,Qty Remaining,Unit Price (NGN),Expiry Date\n";
+            csvContent += "Product ID,Product Description,Category,Qty Remaining,Cost Price (NGN),Selling Price (NGN),Expiry Date\n";
 
             drugsData.forEach(d => {
-                csvContent += `"${d.id}","${d.name}","${d.category}",${d.quantity},${d.price},"${d.expiry}"\n`;
+                const sellPrice = d.sellingPrice || Math.round(d.price * 1.35);
+                csvContent += `"${d.id}","${d.name}","${d.category}",${d.quantity},${d.price},${sellPrice},"${d.expiry}"\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
